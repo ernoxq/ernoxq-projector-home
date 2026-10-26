@@ -48,6 +48,19 @@ object Adb {
 
     fun key(ctx: Context, code: Int): Boolean = shell(ctx, "input keyevent $code")
 
+    /** Silent install (used for updates). The app restarts itself afterwards. */
+    @Synchronized
+    fun install(ctx: Context, apk: File): Boolean {
+        return try {
+            val d = dadb ?: connect(ctx) ?: return false
+            d.install(apk, "-r")
+            true
+        } catch (e: Throwable) {
+            lastError = e.message ?: e.javaClass.simpleName
+            false
+        }
+    }
+
     /** `input text` only types plain Latin text, so spaces and shell characters are escaped. */
     fun text(ctx: Context, s: String): Boolean {
         val safe = s.replace("\\", "").replace("'", "").replace(" ", "%s")

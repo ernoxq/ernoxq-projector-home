@@ -26,6 +26,17 @@ class RemoteService : Service() {
         startForeground(1, n)
         server = RemoteServer(applicationContext).also { it.start() }
         Media.attach(applicationContext)
+        updates.postDelayed(updateCheck, 60_000)
+    }
+
+    private val updates = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** Checks GitHub for a newer build a minute after start, then every 6 hours. */
+    private val updateCheck = object : Runnable {
+        override fun run() {
+            Thread { Updater.check(applicationContext) }.start()
+            updates.postDelayed(this, 6 * 60 * 60_000L)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY

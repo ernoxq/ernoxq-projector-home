@@ -99,6 +99,10 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             }
             "/api/text" -> ok(out, json("ok" to Control.typeText(ctx, q("t"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
+            "/api/update" -> {
+                Thread { Updater.check(ctx) }.start()
+                ok(out, json("ok" to true, "version" to "1.0.${Updater.currentBuild(ctx)}"))
+            }
             "/api/apps" -> {
                 val arr = JSONArray()
                 Apps.all(ctx).forEach { arr.put(JSONObject().put("label", it.label).put("pkg", it.pkg)) }

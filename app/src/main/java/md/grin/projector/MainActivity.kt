@@ -344,7 +344,7 @@ class MainActivity : Activity() {
         val player = if (Media.hasAccess(this)) "есть доступ" else "нет доступа"
         AlertDialog.Builder(this, R.style.Dialog)
             .setTitle("Пульт с телефона")
-            .setMessage("Открой на айфоне в Safari:\n\n${RemoteServer.url()}\n\nТелефон и проектор должны быть в одной Wi-Fi-сети.\n\nУправление кнопками: $adb\nПлеер: $player")
+            .setMessage("Версия 1.0.${Updater.currentBuild(this)} · обновляется сама\n\nОткрой на айфоне в Safari:\n\n${RemoteServer.url()}\n\nТелефон и проектор должны быть в одной Wi-Fi-сети.\n\nУправление кнопками: $adb\nПлеер: $player")
             .setPositiveButton("Настроить автоматически") { _, _ ->
                 Thread {
                     val ok = Adb.setup(applicationContext)
@@ -354,7 +354,13 @@ class MainActivity : Activity() {
                     }
                 }.start()
             }
-            .setNeutralButton("Настройки проектора") { _, _ -> Apps.openSettings(this) }
+            .setNeutralButton("Обновить") { _, _ ->
+                android.widget.Toast.makeText(this, "Проверяю обновления…", android.widget.Toast.LENGTH_SHORT).show()
+                Thread {
+                    Updater.check(applicationContext)
+                    main.post { android.widget.Toast.makeText(this, Updater.status, android.widget.Toast.LENGTH_LONG).show() }
+                }.start()
+            }
             .setNegativeButton("Закрыть", null)
             .show()
     }

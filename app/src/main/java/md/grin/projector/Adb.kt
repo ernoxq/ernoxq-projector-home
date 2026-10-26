@@ -55,8 +55,14 @@ object Adb {
     @Synchronized
     fun key(ctx: Context, code: Int): Boolean {
         try {
-            val s = live ?: (dadb ?: connect(ctx))?.openShell()?.also { live = it } ?: return false
-            s.write("input keyevent $code\n")
+            val s = live ?: (dadb ?: connect(ctx))?.openShell()?.also {
+                live = it
+                // Start the fast key injector from this app's own APK. If it can't start on this firmware,
+                // fall back to a loop that reads the same codes and uses the standard `input` tool.
+                val apk = ctx.applicationInfo.sourceDir
+                it.write("CLASSPATH=$apk app_process / ${KeyServer::class.java.name} || while read k; do input keyevent \$k; done\n")
+            } ?: return false
+            s.write("$code\n")
             return true
         } catch (e: Throwable) {
             try { live?.close() } catch (_: Throwable) {}

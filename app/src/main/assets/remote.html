@@ -4,55 +4,85 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Пульт">
 <meta name="theme-color" content="#C9D3EA">
 <title>Пульт</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,600&display=swap" rel="stylesheet">
 <style>
-:root{--ground:#C9D3EA;--ink:#121212;--soft:#EEF1F7;--glass:rgba(255,255,255,.6);--muted:#555B66;--accent:#FBE38E;--night:#2B3247}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{margin:0;background:var(--ground);color:var(--ink);font-family:'Inter Tight',-apple-system,system-ui,sans-serif;overscroll-behavior:none}
-.app{max-width:440px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 24px);display:flex;flex-direction:column;gap:16px;min-height:100vh}
-button{font-family:inherit;border:none;color:var(--ink);cursor:pointer;transition:transform .12s ease,background .2s}
-button:active{transform:scale(.93)}
-.circle{width:44px;height:44px;border-radius:22px;background:var(--glass);display:flex;align-items:center;justify-content:center}
+:root{--ground:#C9D3EA;--ink:#121212;--soft:#EEF1F7;--glass:rgba(255,255,255,.62);--muted:#555B66;--accent:#FBE38E;--night:#2B3247}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;background:var(--ground);color:var(--ink);font-family:'Inter Tight',-apple-system,system-ui,sans-serif;overscroll-behavior:none;touch-action:manipulation}
+.app{max-width:440px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 18px calc(env(safe-area-inset-bottom) + 20px);display:flex;flex-direction:column;gap:14px;min-height:100vh;min-height:100dvh}
+button{font-family:inherit;border:none;color:var(--ink);cursor:pointer;background:none;padding:0;transition:transform .14s cubic-bezier(.2,.8,.2,1),background .2s,opacity .2s}
+button:active{transform:scale(.92)}
+svg{display:block}
+
 header{display:flex;align-items:center;justify-content:space-between}
-.status{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500}
-.dot{width:8px;height:8px;border-radius:4px;background:#9AA1AE}
-.dot.on{background:#2E9E5B}
-h1{margin:4px 0 0;font-size:38px;line-height:1.02;font-weight:600;letter-spacing:-1.3px}
+.circle{width:44px;height:44px;border-radius:22px;background:var(--glass);display:flex;align-items:center;justify-content:center}
+.circle.dark{background:var(--ink)}
+.status{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;background:var(--glass);height:36px;padding:0 14px;border-radius:18px}
+.dot{width:8px;height:8px;border-radius:4px;background:#9AA1AE;transition:background .3s}
+.dot.on{background:#2E9E5B;box-shadow:0 0 0 3px rgba(46,158,91,.18)}
+
+h1{margin:2px 0 0;font-size:34px;line-height:1.02;font-weight:600;letter-spacing:-1.2px}
 h1 em{font-weight:600}
-.np{background:#fff;border-radius:30px;padding:12px;display:flex;align-items:center;gap:12px}
-.art{width:56px;height:56px;border-radius:18px;background:var(--night) center/cover no-repeat;flex-shrink:0}
+
+.warn{display:none;background:var(--accent);border-radius:22px;padding:12px 14px 12px 16px;font-size:14px;line-height:1.35;align-items:center;gap:12px}
+.warn.show{display:flex}
+.warn button{height:38px;padding:0 16px;border-radius:19px;background:var(--ink);color:#fff;font-weight:600;font-size:14px;white-space:nowrap}
+
+/* now playing */
+.np{background:#fff;border-radius:28px;padding:10px;display:flex;align-items:center;gap:12px}
+.art{width:54px;height:54px;border-radius:18px;background:var(--night) center/cover no-repeat;flex-shrink:0;transition:background-image .3s}
 .np .t{flex:1;min-width:0}
-.np b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np b{display:block;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .np span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.np .ctl{display:flex;gap:6px}
-.np .ctl button{width:42px;height:42px;border-radius:21px;background:var(--soft);display:flex;align-items:center;justify-content:center}
-.np .ctl .main{background:var(--accent);width:48px;height:48px;border-radius:24px}
-.pad{display:flex;gap:12px}
-.dpad{width:min(62vw,236px);aspect-ratio:1;border-radius:50%;background:#fff;position:relative;flex-shrink:0}
-.dpad button{position:absolute;background:transparent;width:30%;height:30%;display:flex;align-items:center;justify-content:center;border-radius:50%}
-.dpad .u{left:35%;top:3%}.dpad .d{left:35%;bottom:3%}.dpad .l{left:3%;top:35%}.dpad .r{right:3%;top:35%}
-.dpad .ok{left:30%;top:30%;width:40%;height:40%;background:var(--ink);color:#fff;font-size:20px;font-weight:600}
-.vol{flex:1;background:#fff;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px 0}
-.vol button{width:60px;height:60px;border-radius:30px;background:var(--soft);display:flex;align-items:center;justify-content:center}
-.vol small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.3px}
-.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.keys button{height:56px;border-radius:28px;background:var(--glass);display:flex;align-items:center;justify-content:center}
-.apps{display:flex;gap:10px;flex-wrap:wrap}
-.apps button{height:44px;padding:0 18px;border-radius:22px;background:#fff;font-size:15px;font-weight:500}
-.apps .dark{background:var(--ink);color:#fff}
-.apps .acc{background:var(--accent);font-weight:600}
+.np .ctl{display:flex;gap:4px;align-items:center}
+.np .ctl button{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center}
+.np .ctl .main{background:var(--accent);width:46px;height:46px;border-radius:23px}
+
+/* touchpad */
+.pad{position:relative;flex:1;min-height:250px;border-radius:34px;background:#fff;overflow:hidden;touch-action:none}
+.pad .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(18,18,18,.07) 1.2px,transparent 1.3px);background-size:22px 22px;background-position:center}
+.pad .hint{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:13px;color:#8A909C;transition:opacity .4s;pointer-events:none}
+.pad .glow{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;background:radial-gradient(circle,rgba(201,211,234,.95),rgba(201,211,234,0) 70%);opacity:0;transform:scale(.6);transition:opacity .25s,transform .25s;pointer-events:none}
+.pad.touch .glow{opacity:1;transform:scale(1)}
+.pad .arrow{position:absolute;width:52px;height:52px;border-radius:26px;background:var(--ink);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+.pad .arrow.up{left:50%;top:18px;margin-left:-26px}.pad .arrow.down{left:50%;bottom:40px;margin-left:-26px}
+.pad .arrow.left{top:50%;left:18px;margin-top:-26px}.pad .arrow.right{top:50%;right:18px;margin-top:-26px}
+.pad .arrow.flash{animation:flash .32s ease-out}
+.pad .okring{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;border:2px solid var(--ink);opacity:0;pointer-events:none}
+.pad .okring.flash{animation:ring .4s ease-out}
+@keyframes flash{0%{opacity:.9;transform:scale(.8)}100%{opacity:0;transform:scale(1.15)}}
+@keyframes ring{0%{opacity:.6;transform:scale(.5)}100%{opacity:0;transform:scale(1.5)}}
+
+/* volume */
+.vol{display:flex;align-items:center;gap:10px;background:#fff;border-radius:28px;padding:8px}
+.vol .mute{width:44px;height:44px;border-radius:22px;background:var(--soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vol .mute.on{background:var(--accent)}
+.slider{position:relative;flex:1;height:44px;border-radius:22px;background:var(--soft);overflow:hidden;touch-action:none}
+.slider .fill{position:absolute;left:0;top:0;bottom:0;width:40%;background:var(--ink);border-radius:22px;transition:width .12s}
+.slider .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:14px;font-weight:600;pointer-events:none}
+.slider .lbl span:first-child{color:#fff;mix-blend-mode:difference}
+.slider .lbl span:last-child{color:var(--muted)}
+
+/* keys */
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.keys button{height:60px;border-radius:22px;background:var(--glass);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:#3F4552}
+.keys button.on{background:var(--ink);color:#fff}
+.keys button.on svg{stroke:#fff}
+
 .typer{display:none;gap:8px}
 .typer.show{display:flex}
-.typer input{flex:1;height:48px;border-radius:24px;border:none;padding:0 18px;font:500 16px 'Inter Tight',sans-serif;background:#fff;color:var(--ink);user-select:text;-webkit-user-select:text}
-.typer button{height:48px;padding:0 18px;border-radius:24px;background:var(--ink);color:#fff;font-weight:600}
-.warn{display:none;background:var(--accent);border-radius:22px;padding:12px 16px;font-size:14px;line-height:1.35}
-.warn.show{display:block}
-.warn button{margin-top:8px;height:38px;padding:0 16px;border-radius:19px;background:var(--ink);color:#fff;font-weight:600}
-svg{display:block}
+.typer input{flex:1;min-width:0;height:48px;border-radius:24px;border:none;padding:0 18px;font:500 16px 'Inter Tight',sans-serif;background:#fff;color:var(--ink);user-select:text;-webkit-user-select:text;outline:none}
+.typer button{height:48px;padding:0 18px;border-radius:24px;background:var(--ink);color:#fff;font-weight:600;font-size:15px}
+
+.apps{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+.apps::-webkit-scrollbar{display:none}
+.apps button{height:42px;padding:0 16px;border-radius:21px;background:#fff;font-size:15px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.apps .acc{background:var(--accent);font-weight:600}
 </style>
 </head>
 <body>
@@ -60,95 +90,130 @@ svg{display:block}
   <header>
     <button class="circle" aria-label="Домой" onclick="key('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="#121212"><path d="M12 3l9 7.5V21h-6v-6H9v6H3V10.5z"/></svg></button>
     <div class="status"><span class="dot" id="dot"></span><span id="st">Подключаюсь…</span></div>
-    <button class="circle" aria-label="Выключить" style="background:#121212" onclick="if(confirm('Выключить проектор?'))key('power')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
+    <button class="circle dark" aria-label="Выключить" onclick="if(confirm('Выключить проектор?'))key('power')"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
   </header>
 
   <h1 id="hello">Привет,<br><em>что включаем?</em></h1>
 
-  <div class="warn" id="warn">Кнопки направлений ещё не подключены. Нажми «Настроить» и на проекторе выбери <b>Always allow</b>.<br><button onclick="api('/api/setup')">Настроить</button></div>
+  <div class="warn" id="warn"><div>Тачпад ещё не подключён. Нажми и выбери на проекторе <b>Allow</b>.</div><button onclick="api('/api/setup')">Настроить</button></div>
 
   <div class="np">
     <div class="art" id="art"></div>
     <div class="t"><b id="tt">Ничего не играет</b><span id="ta">Включи музыку</span></div>
     <div class="ctl">
-      <button aria-label="Назад" onclick="media('prev')"><svg width="14" height="14" viewBox="0 0 24 24" fill="#121212"><path d="M6 5h2.5v14H6zM20 5v14L9.5 12z"/></svg></button>
+      <button aria-label="Предыдущий" onclick="media('prev')"><svg width="14" height="14" viewBox="0 0 24 24" fill="#121212"><path d="M6 5h2.5v14H6zM20 5v14L9.5 12z"/></svg></button>
       <button class="main" aria-label="Пауза" onclick="media('play')"><svg id="pp" width="16" height="16" viewBox="0 0 24 24" fill="#121212"><path d="M8 5v14l11-7z"/></svg></button>
-      <button aria-label="Дальше" onclick="media('next')"><svg width="14" height="14" viewBox="0 0 24 24" fill="#121212"><path d="M15.5 5H18v14h-2.5zM4 5v14l10.5-7z"/></svg></button>
+      <button aria-label="Следующий" onclick="media('next')"><svg width="14" height="14" viewBox="0 0 24 24" fill="#121212"><path d="M15.5 5H18v14h-2.5zM4 5v14l10.5-7z"/></svg></button>
     </div>
   </div>
 
-  <div class="pad">
-    <div class="dpad">
-      <button class="u" aria-label="Вверх" data-k="up"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
-      <button class="d" aria-label="Вниз" data-k="down"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <button class="l" aria-label="Влево" data-k="left"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <button class="r" aria-label="Вправо" data-k="right"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
-      <button class="ok" data-k="ok">OK</button>
-    </div>
-    <div class="vol">
-      <button aria-label="Громче" data-v="up"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-      <small id="vl">ЗВУК</small>
-      <button aria-label="Тише" data-v="down"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-    </div>
+  <div class="pad" id="pad" aria-label="Тачпад: проведи пальцем, чтобы двигаться, коснись, чтобы выбрать">
+    <div class="grain"></div>
+    <div class="glow" id="glow"></div>
+    <div class="arrow up"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></div>
+    <div class="arrow down"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="arrow left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+    <div class="arrow right"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="okring" id="okring"></div>
+    <div class="hint" id="hint">Проведи пальцем — двигаться · коснись — выбрать</div>
+  </div>
+
+  <div class="vol">
+    <button class="mute" id="mute" aria-label="Без звука" onclick="vol('mute')"><svg id="mi" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <div class="slider" id="slider" aria-label="Громкость"><div class="fill" id="fill"></div><div class="lbl"><span>Звук</span><span id="vl">—</span></div></div>
   </div>
 
   <div class="keys">
-    <button aria-label="Назад" data-k="back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
-    <button aria-label="Меню" data-k="menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linecap="round"><path d="M5 9h14M5 15h14"/></svg></button>
-    <button aria-label="Без звука" onclick="vol('mute')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l4 6M21 9l-4 6"/></svg></button>
-    <button aria-label="Ввести текст" onclick="toggleType()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3"/><path d="M7 14h10"/></svg></button>
+    <button data-k="back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Назад</button>
+    <button data-k="home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5v-5H9v5H4z"/></svg>Домой</button>
+    <button data-k="menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linecap="round"><path d="M5 8h14M5 12h14M5 16h14"/></svg>Меню</button>
+    <button id="kb" onclick="toggleType()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="3"/><path d="M6.5 10h1M10.5 10h1M14.5 10h1M8 14h8"/></svg>Текст</button>
   </div>
 
-  <div class="typer show" id="typer"><input id="tx" placeholder="Текст или адрес сайта" autocomplete="off" autocapitalize="off"><button onclick="sendText()">Ввести</button></div>
+  <div class="typer" id="typer"><input id="tx" placeholder="Текст или адрес сайта" autocomplete="off" autocapitalize="off" enterkeyhint="send"><button onclick="sendText()">Ввести</button></div>
 
   <div class="apps">
-    <button class="dark" onclick="launch('youtube')">YouTube</button>
+    <button onclick="launch('youtube')">YouTube</button>
     <button onclick="launch('netflix')">Netflix</button>
     <button onclick="launch('spotify')">Spotify</button>
     <button onclick="launch('browser')">Браузер</button>
     <button onclick="launch('hdmi')">HDMI</button>
-    <button onclick="launch('apps')">Все приложения</button>
+    <button onclick="launch('apps')">Все</button>
     <button class="acc" onclick="launch('cast')">Трансляция</button>
   </div>
 </div>
 <script>
-const api=(p)=>fetch(p).then(r=>r.json()).catch(()=>({ok:false}));
-const key=(k)=>api('/api/key?k='+k);
-const vol=(d)=>api('/api/vol?d='+d).then(refresh);
-const media=(c)=>api('/api/media?c='+c).then(()=>setTimeout(refresh,300));
-const launch=(a)=>api('/api/launch?app='+a);
-function toggleType(){const t=document.getElementById('typer');t.classList.toggle('show');if(t.classList.contains('show'))document.getElementById('tx').focus()}
-function sendText(){const i=document.getElementById('tx');if(!i.value)return;api('/api/text?t='+encodeURIComponent(i.value)).then(()=>key('enter'));i.value=''}
-document.getElementById('tx').addEventListener('keydown',e=>{if(e.key==='Enter')sendText()});
+const $=id=>document.getElementById(id);
+const api=p=>fetch(p).then(r=>r.json()).catch(()=>({ok:false}));
+const key=k=>api('/api/key?k='+k);
+const media=c=>api('/api/media?c='+c).then(()=>setTimeout(refresh,300));
+const launch=a=>api('/api/launch?app='+a);
+function vol(d){api('/api/vol?d='+d).then(refresh)}
 
-// Hold a button to repeat, like a real remote.
-function holdable(el,fire){let t1,t2;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
-  el.addEventListener('pointerdown',e=>{e.preventDefault();fire();t1=setTimeout(()=>t2=setInterval(fire,140),420)});
-  ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev,stop));}
-document.querySelectorAll('[data-k]').forEach(b=>holdable(b,()=>key(b.dataset.k)));
-document.querySelectorAll('[data-v]').forEach(b=>holdable(b,()=>vol(b.dataset.v)));
+/* ---------- touchpad: swipe to move, tap to select ---------- */
+const pad=$('pad'),glow=$('glow');
+const STEP=42;          // px of finger travel per step
+let sx=0,sy=0,ox=0,oy=0,t0=0,moved=false,axis=null,touching=false;
+function flash(dir){const a=pad.querySelector('.arrow.'+dir);a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}
+function step(dir){key(dir);flash(dir);$('hint').style.opacity=0}
+pad.addEventListener('pointerdown',e=>{
+  pad.setPointerCapture(e.pointerId);touching=true;pad.classList.add('touch');
+  const r=pad.getBoundingClientRect();glow.style.left=(e.clientX-r.left)+'px';glow.style.top=(e.clientY-r.top)+'px';
+  sx=ox=e.clientX;sy=oy=e.clientY;t0=Date.now();moved=false;axis=null;
+});
+pad.addEventListener('pointermove',e=>{
+  if(!touching)return;
+  const r=pad.getBoundingClientRect();glow.style.left=(e.clientX-r.left)+'px';glow.style.top=(e.clientY-r.top)+'px';
+  const dx=e.clientX-ox,dy=e.clientY-oy;
+  if(!axis&&Math.hypot(e.clientX-sx,e.clientY-sy)>14)axis=Math.abs(e.clientX-sx)>Math.abs(e.clientY-sy)?'x':'y';
+  if(axis==='x'&&Math.abs(dx)>=STEP){step(dx>0?'right':'left');ox+=Math.sign(dx)*STEP;oy=e.clientY;moved=true}
+  if(axis==='y'&&Math.abs(dy)>=STEP){step(dy>0?'down':'up');oy+=Math.sign(dy)*STEP;ox=e.clientX;moved=true}
+});
+function end(){
+  if(!touching)return;touching=false;pad.classList.remove('touch');
+  if(!moved&&!axis&&Date.now()-t0<350){key('ok');const r=$('okring');r.classList.remove('flash');void r.offsetWidth;r.classList.add('flash');$('hint').style.opacity=0}
+}
+pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);
+
+/* ---------- volume slider: drag to set ---------- */
+const slider=$('slider');let dragging=false,sendT=null,shown=40;
+function setFill(p){shown=p;$('fill').style.width=Math.max(p,9)+'%';$('vl').textContent=p+'%'}
+function fromEvent(e){const r=slider.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*100)}
+function sendVol(p){clearTimeout(sendT);sendT=setTimeout(()=>api('/api/vol?set='+p),60)}
+slider.addEventListener('pointerdown',e=>{slider.setPointerCapture(e.pointerId);dragging=true;const p=fromEvent(e);setFill(p);sendVol(p)});
+slider.addEventListener('pointermove',e=>{if(!dragging)return;const p=fromEvent(e);setFill(p);sendVol(p)});
+['pointerup','pointercancel'].forEach(ev=>slider.addEventListener(ev,()=>{dragging=false;setTimeout(refresh,400)}));
+
+/* ---------- keys and text ---------- */
+document.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>key(b.dataset.k)));
+function toggleType(){const t=$('typer');t.classList.toggle('show');$('kb').classList.toggle('on',t.classList.contains('show'));if(t.classList.contains('show'))$('tx').focus()}
+function sendText(){const i=$('tx');if(!i.value)return;api('/api/text?t='+encodeURIComponent(i.value));i.value=''}
+$('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendText();setTimeout(()=>key('enter'),250)}});
 
 const h=new Date().getHours();
-document.getElementById('hello').innerHTML=(h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':h<23?'Добрый вечер':'Доброй ночи')+',<br><em>что включаем?</em>';
+$('hello').innerHTML=(h<5?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':h<23?'Добрый вечер':'Доброй ночи')+',<br><em>что включаем?</em>';
 
 let lastArt='';
 function refresh(){
   api('/api/state').then(s=>{
     const on=s&&s.volume!==undefined;
-    document.getElementById('dot').classList.toggle('on',on);
-    document.getElementById('st').textContent=on?'Проектор · в сети':'Нет связи';
+    $('dot').classList.toggle('on',on);
+    $('st').textContent=on?'Проектор в сети':'Нет связи';
     if(!on)return;
-    document.getElementById('vl').textContent=s.muted?'БЕЗ ЗВУКА':'ЗВУК '+s.volume;
-    document.getElementById('warn').classList.toggle('show',!s.adb);
+    if(!dragging)setFill(s.volume);
+    $('mute').classList.toggle('on',!!s.muted);
+    if(s.muted)$('vl').textContent='тихо';
+    $('warn').classList.toggle('show',!s.adb);
     const m=s.media;
-    document.getElementById('tt').textContent=m?m.title:'Ничего не играет';
-    document.getElementById('ta').textContent=m?(m.artist||m.source):'Включи музыку';
-    document.getElementById('pp').innerHTML=m&&m.playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
-    const art=document.getElementById('art');const k=m&&m.art?m.title:'';
-    if(k!==lastArt){lastArt=k;art.style.backgroundImage=k?'url(/api/art?'+Date.now()+')':'none'}
+    $('tt').textContent=m?m.title:'Ничего не играет';
+    $('ta').textContent=m?(m.artist||m.source):'Включи музыку';
+    $('pp').innerHTML=m&&m.playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
+    const k=m&&m.art?m.title:'';
+    if(k!==lastArt){lastArt=k;$('art').style.backgroundImage=k?'url(/api/art?'+Date.now()+')':'none'}
   });
 }
 refresh();setInterval(refresh,2000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 </script>
 </body>
 </html>

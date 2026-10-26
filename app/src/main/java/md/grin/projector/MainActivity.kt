@@ -47,8 +47,18 @@ class MainActivity : Activity() {
     private val tick = object : Runnable {
         override fun run() {
             renderClock()
-            renderMedia()
+            updateProgress()
             main.postDelayed(this, 1000)
+        }
+    }
+
+    /** Tiles are rebuilt only when an app is installed, removed or updated. */
+    private var tilesDirty = true
+    private val packagesChanged = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: android.content.Context, i: android.content.Intent) {
+            Apps.invalidate()
+            tilesDirty = true
+            if (App.isForeground) { renderTiles(); tilesDirty = false }
         }
     }
 
@@ -56,17 +66,37 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         setContentView(build())
+        // The root view paints the background itself; drop the window's copy to avoid drawing the screen twice.
+        window.setBackgroundDrawable(null)
         RemoteService.start(this)
-        Thread { Adb.setup(applicationContext) }.start()
+        registerReceiver(packagesChanged, android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_PACKAGE_ADDED)
+            addAction(android.content.Intent.ACTION_PACKAGE_REMOVED)
+            addAction(android.content.Intent.ACTION_PACKAGE_CHANGED)
+            addAction(android.content.Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        })
+        // System setup through ADB runs once per installed version, not on every start.
+        val prefs = getSharedPreferences("home", MODE_PRIVATE)
+        val build = Updater.currentBuild(this)
+        if (prefs.getLong("setup_build", -1) != build) {
+            Thread { if (Adb.setup(applicationContext)) prefs.edit().putLong("setup_build", build).apply() }.start()
+        }
+    }
+
+    override fun onDestroy() {
+        try { unregisterReceiver(packagesChanged) } catch (_: Exception) {}
+        super.onDestroy()
     }
 
     override fun onResume() {
         super.onResume()
         App.isForeground = true
-        Apps.invalidate()
-        renderTiles()
+        if (tilesDirty) { renderTiles(); tilesDirty = false }
         Media.attach(applicationContext)
         Media.listen(mediaChanged)
+        lastMinute = ""
+        renderMedia()
         main.post(tick)
         loadWeather()
         firstTile?.requestFocus()
@@ -267,11 +297,18 @@ class MainActivity : Activity() {
 
     // ---------- live data ----------
 
+    private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val dateFmt = SimpleDateFormat("EEEE, d MMMM", Locale("ru"))
+    private var lastMinute = ""
+
+    /** Redraws the header only when the minute changes. */
     private fun renderClock() {
         val now = Date()
-        clock.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(now)
-        val d = SimpleDateFormat("EEEE, d MMMM", Locale("ru")).format(now)
-        date.text = d.replaceFirstChar { it.uppercase() }
+        val t = timeFmt.format(now)
+        if (t == lastMinute) return
+        lastMinute = t
+        clock.text = t
+        date.text = dateFmt.format(now).replaceFirstChar { it.uppercase() }
         val h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val hello = when (h) { in 5..11 -> "Доброе утро"; in 12..17 -> "Добрый день"; in 18..22 -> "Добрый вечер"; else -> "Доброй ночи" }
         val name = getSharedPreferences("home", MODE_PRIVATE).getString("name", "Эрнест")
@@ -284,8 +321,23 @@ class MainActivity : Activity() {
         }
     }
 
+    private var mediaKey: Any? = Unit
+    private var lastNp: NowPlaying? = null
+
+    /** Updates only the progress bar and time each second; the rest of the card waits for real changes. */
+    private fun updateProgress() {
+        val np = Media.current(this)
+        val key = np?.let { listOf(it.title, it.artist, it.playing, it.art) }
+        if (key != mediaKey) { renderMedia(); return }
+        if (np == null || !np.playing || np.duration <= 0) return
+        trackTime.text = "${fmt(np.position)} / ${fmt(np.duration)}"
+        setProgress(np.position.toFloat() / np.duration)
+    }
+
     private fun renderMedia() {
         val np = Media.current(this)
+        lastNp = np
+        mediaKey = np?.let { listOf(it.title, it.artist, it.playing, it.art) }
         if (np == null) {
             trackSource.text = if (Media.hasAccess(this)) "Сейчас играет" else "Плеер ждёт доступа"
             trackTitle.text = "Ничего не играет"

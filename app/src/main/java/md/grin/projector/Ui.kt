@@ -30,6 +30,7 @@ object Ui {
     const val NIGHT2 = 0xFF3A4360.toInt()
 
     var scale = 1f
+    private val FOCUS_EASE = DecelerateInterpolator(1.6f)
 
     fun init(ctx: Context) {
         val dm = ctx.resources.displayMetrics
@@ -112,13 +113,14 @@ object Ui {
         v.background = normal
         v.setOnFocusChangeListener { view, has ->
             view.background = if (has) focused else normal
+            // Scale only (no shadows) and render through a GPU layer while animating: smooth on the weak Mali GPU.
             view.animate().cancel()
             view.animate()
                 .scaleX(if (has) 1.05f else 1f)
                 .scaleY(if (has) 1.05f else 1f)
-                .translationZ(if (has) pxf(8) else 0f)
-                .setDuration(160)
-                .setInterpolator(DecelerateInterpolator())
+                .setDuration(140)
+                .setInterpolator(FOCUS_EASE)
+                .withLayer()
                 .start()
         }
     }

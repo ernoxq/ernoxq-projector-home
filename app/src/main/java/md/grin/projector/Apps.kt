@@ -34,7 +34,13 @@ object Apps {
 
     private var cache: List<AppEntry>? = null
 
-    fun invalidate() { cache = null }
+    private val icons = HashMap<String, Drawable?>()
+
+    /** Called only when an app is installed, removed or updated, not on every return to the home screen. */
+    fun invalidate() {
+        cache = null
+        icons.clear()
+    }
 
     /** Every app that can be opened, from both the TV and the phone-style launcher lists. */
     fun all(ctx: Context): List<AppEntry> {
@@ -73,10 +79,16 @@ object Apps {
         ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putString("tile_${spec.key}", pkg).apply()
     }
 
-    fun icon(ctx: Context, entry: AppEntry): Drawable? = try {
-        ctx.packageManager.getActivityIcon(entry.component)
-    } catch (e: PackageManager.NameNotFoundException) {
-        null
+    fun icon(ctx: Context, entry: AppEntry): Drawable? {
+        val k = entry.component.flattenToShortString()
+        if (icons.containsKey(k)) return icons[k]?.constantState?.newDrawable()?.mutate() ?: icons[k]
+        val d = try {
+            ctx.packageManager.getActivityIcon(entry.component)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+        icons[k] = d
+        return d
     }
 
     fun banner(ctx: Context, entry: AppEntry): Drawable? = try {

@@ -103,6 +103,11 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 onMain { r = Apps.launchKey(ctx, q("app")) }
                 ok(out, json("ok" to r))
             }
+            "/api/ytsearch" -> {
+                var r = false
+                onMain { r = Apps.searchYoutube(ctx, q("q")) }
+                ok(out, json("ok" to r))
+            }
             "/api/text" -> ok(out, json("ok" to Control.typeText(ctx, q("t"))))
             // Live typing: replaces the focused field's text as the phone keyboard types
             "/api/settext" -> ok(out, json("ok" to (TvKeyboard.setText(q("t")) || Control.typeText(ctx, q("t")))))

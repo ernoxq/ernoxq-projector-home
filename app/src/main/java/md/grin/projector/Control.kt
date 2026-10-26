@@ -35,6 +35,8 @@ object Control {
     fun typeText(ctx: Context, text: String): Boolean {
         if (text.isEmpty()) return false
         if (TvKeyboard.insert(text)) return true
+        val fg = Apps.foreground(ctx)
+        if (fg != null && fg.contains("youtube")) return Apps.searchYoutube(ctx, text)
         if (Adb.chars(ctx, text)) return true
         val latch = java.util.concurrent.CountDownLatch(1)
         android.os.Handler(android.os.Looper.getMainLooper()).post {

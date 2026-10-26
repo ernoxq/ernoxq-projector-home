@@ -134,6 +134,29 @@ object Apps {
         }
     }
 
+    /** Opens YouTube's search results for [query] (works with the TV version's own keyboard screen too). */
+    fun searchYoutube(ctx: Context, query: String): Boolean {
+        val spec = tiles.firstOrNull { it.key == "youtube" } ?: return false
+        val pkg = resolve(ctx, spec)?.pkg ?: return false
+        val url = "https://www.youtube.com/results?search_query=" + java.net.URLEncoder.encode(query, "UTF-8")
+        val tries = listOf(
+            Intent(Intent.ACTION_SEARCH).setPackage(pkg).putExtra(android.app.SearchManager.QUERY, query),
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).setPackage(pkg),
+        )
+        for (i in tries) {
+            try {
+                ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return true
+            } catch (_: Exception) {}
+        }
+        return Adb.shell(ctx, "am start -a android.intent.action.VIEW -d '$url' $pkg")
+    }
+
+    /** Which app is on screen right now (via ADB), or null. */
+    fun foreground(ctx: Context): String? {
+        val out = Adb.run(ctx, "dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'") ?: return null
+        return Regex("u0 ([A-Za-z0-9_.]+)/").find(out)?.groupValues?.get(1)
+    }
+
     /** Opens an app. Falls back to ADB when Android blocks a start from the background (phone remote). */
     fun launch(ctx: Context, entry: AppEntry): Boolean {
         val pm = ctx.packageManager

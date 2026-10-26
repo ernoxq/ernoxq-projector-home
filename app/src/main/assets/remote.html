@@ -215,7 +215,7 @@ svg{display:block}
     <button class="rb lg" aria-label="Домой" onclick="key('home');closeSheet()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6" stroke-linecap="round"/></svg></button>
   </div>
 
-  <div class="typer" id="typer"><input id="tx" placeholder="Текст или адрес сайта" autocomplete="off" autocapitalize="off" enterkeyhint="send"><button onclick="sendText()">Ввести</button></div>
+  <div class="typer" id="typer"><input id="tx" placeholder="Текст или поиск" autocomplete="off" autocapitalize="off" enterkeyhint="send"><button onclick="ytSearch()" aria-label="Искать в YouTube" style="background:#F5F5F7;padding:0 16px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="4"/><path d="M10 8.8v6.4l5.3-3.2z" fill="#1C1C1E" stroke="none"/></svg></button><button onclick="sendText()">Ввести</button></div>
  </div>
 </div>
 
@@ -305,6 +305,7 @@ function toggleWarm(){warmOn=!warmOn;paintWarm();api('/api/warm?on='+(warmOn?1:0
 function sleepTest(){if(confirm('Выключить проектор через 40 секунд? Любое нажатие на пульте отменит.')){api('/api/sleeptest');closeSheet()}}
 function toggleSleep(){sleepOn=!sleepOn;paintSleep();api('/api/sleep?on='+(sleepOn?1:0))}
 
+function ytSearch(){const i=$('tx');if(!i.value)return;api('/api/ytsearch?q='+encodeURIComponent(i.value));i.value='';closeSheet()}
 function sendText(){const i=$('tx');if(!i.value)return;api('/api/text?t='+encodeURIComponent(i.value));i.value=''}
 $('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendText();setTimeout(()=>key('enter'),250)}});
 

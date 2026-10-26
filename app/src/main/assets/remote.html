@@ -154,6 +154,10 @@ svg{display:block}
     <button onclick="go('hdmi')">HDMI</button>
     <button class="acc" onclick="go('cast')">Трансляция</button>
   </div>
+  <h3>Картинка</h3>
+  <div class="apps" style="grid-template-columns:1fr">
+    <button id="bright" onclick="toggleBright()">Яркий режим (для света в комнате): выкл</button>
+  </div>
 </div>
 
 <script>
@@ -236,6 +240,10 @@ kin.addEventListener('input',()=>{clearTimeout(liveT);liveT=setTimeout(()=>api('
 function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
 kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitKbar()}});
 
+let brightOn=false;
+function toggleBright(){api('/api/bright?on='+(brightOn?0:1)).then(s=>{if(s&&s.ok){brightOn=s.on;paintBright()}})}
+function paintBright(){const b=$('bright');b.textContent='Яркий режим (для света в комнате): '+(brightOn?'вкл':'выкл');b.classList.toggle('acc',brightOn)}
+
 let lastArt='';
 function refresh(){
   api('/api/state').then(s=>{
@@ -246,6 +254,7 @@ function refresh(){
     $('mute').classList.toggle('on',!!s.muted);
     if(!dragging)setFill(s.volume);
     $('warn').classList.toggle('show',!s.adb);
+    if(s.bright!==undefined&&s.bright!==brightOn){brightOn=s.bright;paintBright()}
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
     else if(!s.typing&&kbarOpen&&!editing)hideKbar(false);
     const m=s.media;

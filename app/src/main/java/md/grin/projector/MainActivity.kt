@@ -147,7 +147,7 @@ class MainActivity : Activity() {
         tilesRow = Ui.row(this).apply { clipChildren = false; clipToPadding = false }
         root.addView(tilesRow, Ui.lp(MATCH, px(196)))
         root.addView(Ui.flex(this))
-        root.addView(nav(), LinearLayout.LayoutParams(WRAP, px(64)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        root.addView(nav(), LinearLayout.LayoutParams(WRAP, px(84)).apply { gravity = Gravity.CENTER_HORIZONTAL })
         return root
     }
 
@@ -264,7 +264,11 @@ class MainActivity : Activity() {
             val tile = Ui.col(this).apply {
                 setPadding(px(20), px(20), px(20), px(20))
                 Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else Ui.INK)
-                setOnClickListener { Apps.invalidate(); Apps.launchKey(this@MainActivity, spec.key) }
+                setOnClickListener {
+                    Apps.invalidate()
+                    if (Apps.resolve(this@MainActivity, spec) == null && spec.key != "hdmi") pickApp(spec)
+                    else Apps.launchKey(this@MainActivity, spec.key)
+                }
                 setOnLongClickListener { pickApp(spec); true }
             }
             val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
@@ -277,7 +281,7 @@ class MainActivity : Activity() {
             tile.addView(iconBox, Ui.lp(px(60), px(60)))
             tile.addView(Ui.flex(this))
             tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Ui.INVERSE else Ui.INK).apply { letterSpacing = -0.015f })
-            val hint = if (entry == null && spec.candidates.isNotEmpty()) "Не установлено" else spec.hint
+            val hint = if (entry == null && spec.candidates.isNotEmpty()) "Нажми, чтобы выбрать" else spec.hint
             tile.addView(Ui.text(this, hint, 14, 400, if (spec.dark) Ui.INVERSE_SUB else Ui.MUTED), Ui.lp(WRAP, WRAP).apply { topMargin = px(4) })
             tilesRow.addView(tile, Ui.lp(0, MATCH, 1f).apply { if (i > 0) leftMargin = px(16) })
             if (i == 0) firstTile = tile
@@ -286,25 +290,27 @@ class MainActivity : Activity() {
 
     private fun nav(): View {
         val n = Ui.row(this).apply {
-            background = Ui.round(Ui.WHITE, 34)
-            setPadding(px(8), px(8), px(8), px(8))
+            background = Ui.round(Ui.WHITE, 42)
+            setPadding(px(11), px(11), px(11), px(11))
+            clipChildren = false
+            clipToPadding = false
         }
         val home = Ui.row(this).apply {
-            setPadding(px(14), 0, px(22), 0)
-            Ui.focusable(this, Ui.SOFT, 24)
-            addView(Ui.icon(this@MainActivity, R.drawable.ic_home, 22))
-            addView(Ui.text(this@MainActivity, "Главная", 17, 600), Ui.lp(WRAP, WRAP).apply { leftMargin = px(10) })
+            setPadding(px(20), 0, px(28), 0)
+            Ui.focusable(this, Ui.SOFT, 31)
+            addView(Ui.icon(this@MainActivity, R.drawable.ic_home, 26))
+            addView(Ui.text(this@MainActivity, "Главная", 20, 600), Ui.lp(WRAP, WRAP).apply { leftMargin = px(12) })
             setOnClickListener { firstTile?.requestFocus() }
         }
-        n.addView(home, Ui.lp(WRAP, px(48)))
+        n.addView(home, Ui.lp(WRAP, px(62)))
         val items = listOf(R.drawable.ic_grid to "apps", R.drawable.ic_hdmi to "hdmi", R.drawable.ic_cast to "cast", R.drawable.ic_gear to "settings")
         for ((res, key) in items) {
             val b = FrameLayout(this).apply {
-                Ui.focusable(this, Ui.WHITE, 24)
-                addView(Ui.icon(this@MainActivity, res, 22, Ui.SUBTLE), FrameLayout.LayoutParams(px(22), px(22), Gravity.CENTER))
+                Ui.focusable(this, Ui.WHITE, 31)
+                addView(Ui.icon(this@MainActivity, res, 26, Ui.SUBTLE), FrameLayout.LayoutParams(px(26), px(26), Gravity.CENTER))
                 setOnClickListener { Apps.launchKey(this@MainActivity, key) }
             }
-            n.addView(b, Ui.lp(px(56), px(48)).apply { leftMargin = px(6) })
+            n.addView(b, Ui.lp(px(72), px(62)).apply { leftMargin = px(8) })
         }
         return n
     }
@@ -423,9 +429,18 @@ class MainActivity : Activity() {
     private fun showMenu() {
         val adb = if (Adb.connected) "подключено" else "не подключено (${Adb.lastError ?: "ждёт разрешения"})"
         val player = if (Media.hasAccess(this)) "есть доступ" else "нет доступа"
+        val bright = Picture.isOn(this)
         AlertDialog.Builder(this, R.style.Dialog)
-            .setTitle("Пульт с телефона")
-            .setMessage("Версия 1.0.${Updater.currentBuild(this)} · обновляется сама\n\nОткрой на айфоне в Safari:\n\n${RemoteServer.url()}\n\nТелефон и проектор должны быть в одной Wi-Fi-сети.\n\nУправление кнопками: $adb\nПлеер: $player")
+            .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player")
+            .setItems(arrayOf(if (bright) "Яркий режим: включён — выключить" else "Яркий режим: выключен — включить", "Настройки проектора")) { _, i ->
+                when (i) {
+                    0 -> Thread {
+                        val ok = Picture.set(applicationContext, !bright)
+                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!bright) "Яркий режим включён" else "Обычная картинка") else "Нужно подключение «кнопок» (ADB)", android.widget.Toast.LENGTH_SHORT).show() }
+                    }.start()
+                    1 -> Apps.openSettings(this)
+                }
+            }
             .setPositiveButton("Настроить автоматически") { _, _ ->
                 Thread {
                     val ok = Adb.setup(applicationContext)

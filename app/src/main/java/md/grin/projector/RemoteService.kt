@@ -27,6 +27,7 @@ class RemoteService : Service() {
         server = RemoteServer(applicationContext).also { it.start() }
         Media.attach(applicationContext)
         updates.postDelayed(updateCheck, 60_000)
+        Thread { Picture.restore(applicationContext) }.start()
     }
 
     private val updates = android.os.Handler(android.os.Looper.getMainLooper())

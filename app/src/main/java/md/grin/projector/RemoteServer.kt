@@ -102,6 +102,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/settext" -> ok(out, json("ok" to (TvKeyboard.setText(q("t")) || FocusWatcher.setText(q("t")) || Control.typeText(ctx, q("t")))))
             "/api/submit" -> ok(out, json("ok" to (TvKeyboard.submit() || Control.key(ctx, "enter"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
+            "/api/bright" -> ok(out, json("ok" to Picture.set(ctx, q("on") == "1"), "on" to Picture.isOn(ctx)))
             "/api/update" -> {
                 Thread { Updater.check(ctx) }.start()
                 ok(out, json("ok" to true, "version" to "1.0.${Updater.currentBuild(ctx)}"))
@@ -137,6 +138,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("typingAt", maxOf(TvKeyboard.changedAt, FocusWatcher.changedAt))
             .put("text", if (TvKeyboard.active) TvKeyboard.text else FocusWatcher.text)
             .put("focusWatch", FocusWatcher.enabled)
+            .put("bright", Picture.isOn(ctx))
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

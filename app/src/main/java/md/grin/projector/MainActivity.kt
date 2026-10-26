@@ -262,7 +262,14 @@ class MainActivity : Activity() {
         firstTile = null
         Apps.tiles.forEachIndexed { i, spec ->
             val entry = Apps.resolve(this, spec)
-            val cardBg = if (spec.dark) Ui.INK else Ui.WHITE
+            val showAppIcon = entry != null && !spec.dark && spec.key != "hdmi"
+            val appIcon = if (showAppIcon) Apps.hiResIcon(this, entry!!) else null
+            val brand = appIcon?.let { Apps.mainColor(this, entry!!, it) }
+            val cardBg = when {
+                spec.dark -> Ui.INK
+                brand != null -> blend(Ui.WHITE, brand, if (Ui.night) 0.22f else 0.13f)
+                else -> Ui.WHITE
+            }
             val tile = Ui.col(this).apply {
                 setPadding(px(20), px(20), px(20), px(20))
                 Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else Ui.INK)
@@ -273,10 +280,22 @@ class MainActivity : Activity() {
                 }
                 setOnLongClickListener { pickApp(spec); true }
             }
-            val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
-            // Our own icons in the home screen's style (the apps' own icons look out of place here).
-            iconBox.addView(Ui.icon(this, spec.fallbackIcon, 30, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
-            tile.addView(iconBox, Ui.lp(px(60), px(60)))
+            if (appIcon != null) {
+                // The app's own icon, large and crisp, with rounded corners like on a phone home screen.
+                val img = ImageView(this).apply {
+                    setImageDrawable(appIcon)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    clipToOutline = true
+                    outlineProvider = object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.pxf(16)) }
+                    }
+                }
+                tile.addView(img, Ui.lp(px(64), px(64)))
+            } else {
+                val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
+                iconBox.addView(Ui.icon(this, spec.fallbackIcon, 30, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
+                tile.addView(iconBox, Ui.lp(px(64), px(64)))
+            }
             tile.addView(Ui.flex(this))
             tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Ui.INVERSE else Ui.INK).apply { letterSpacing = -0.015f })
             val hint = if (entry == null && spec.candidates.isNotEmpty()) "Нажми, чтобы выбрать" else spec.hint
@@ -284,6 +303,11 @@ class MainActivity : Activity() {
             tilesRow.addView(tile, Ui.lp(0, MATCH, 1f).apply { if (i > 0) leftMargin = px(16) })
             if (i == 0) firstTile = tile
         }
+    }
+
+    private fun blend(a: Int, b: Int, t: Float): Int {
+        fun ch(s: Int) = (((a shr s) and 0xFF) + ((((b shr s) and 0xFF) - ((a shr s) and 0xFF)) * t)).toInt()
+        return Color.rgb(ch(16), ch(8), ch(0))
     }
 
     private fun nav(): View {

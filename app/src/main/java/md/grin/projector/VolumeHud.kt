@@ -43,7 +43,7 @@ object VolumeHud {
         main.post {
             val v = view ?: attach(ctx.applicationContext) ?: return@post
             v.update(name, if (muted) 0f else percent / 100f, muted)
-            if (!shown) slide(true) else bump(v)
+            if (!shown) slide(true)
             main.removeCallbacks(hide)
             main.postDelayed(hide, 2600)
         }
@@ -142,17 +142,24 @@ object VolumeHud {
         private val bar = RectF()
         private val clip = Path()
 
-        fun update(newName: String, target: Float, isMuted: Boolean) {
+        private var target = 0f
+        private val follow = object : Runnable {
+            override fun run() {
+                // Glide toward the new level a little each frame: smooth even while a key is held.
+                val d = target - level
+                if (kotlin.math.abs(d) < 0.002f) { level = target; invalidate(); return }
+                level += d * 0.18f
+                invalidate()
+                postOnAnimation(this)
+            }
+        }
+
+        fun update(newName: String, newTarget: Float, isMuted: Boolean) {
             name = newName
             muted = isMuted
-            anim?.cancel()
-            anim = ValueAnimator.ofFloat(level, target.coerceIn(0f, 1f)).apply {
-                duration = 340
-                interpolator = PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
-                addUpdateListener { level = it.animatedValue as Float; invalidate() }
-                start()
-            }
-            invalidate()
+            target = newTarget.coerceIn(0f, 1f)
+            removeCallbacks(follow)
+            postOnAnimation(follow)
         }
 
         override fun onDraw(canvas: Canvas) {

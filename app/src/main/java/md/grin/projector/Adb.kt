@@ -62,22 +62,39 @@ object Adb {
      * That removes the per-press connection setup, so the phone touchpad feels much quicker.
      */
     @Synchronized
-    fun key(ctx: Context, code: Int): Boolean {
+    fun key(ctx: Context, code: Int): Boolean =
+        writeLive(ctx, "$code") || shell(ctx, "input keyevent $code")
+
+    /** Types text straight into the focused field (any language), through the live injector. */
+    fun chars(ctx: Context, text: String): Boolean =
+        writeLive(ctx, "t " + java.net.URLEncoder.encode(text, "UTF-8"))
+
+    @Synchronized
+    private fun writeLive(ctx: Context, line: String): Boolean {
         try {
             val s = live ?: (dadb ?: connect(ctx))?.openShell()?.also {
                 live = it
-                // Start the fast key injector from this app's own APK. If it can't start on this firmware,
-                // fall back to a loop that reads the same codes and uses the standard `input` tool.
+                // Start the fast injector from this app's own APK. If it can't start on this firmware,
+                // fall back to a loop that reads the same key codes and uses the standard `input` tool.
                 val apk = ctx.applicationInfo.sourceDir
                 it.write("CLASSPATH=$apk app_process / ${KeyServer::class.java.name} || while read k; do input keyevent \$k; done\n")
             } ?: return false
-            s.write("$code\n")
+            s.write("$line\n")
             return true
         } catch (e: Throwable) {
             try { live?.close() } catch (_: Throwable) {}
             live = null
         }
-        return shell(ctx, "input keyevent $code")
+        return false
+    }
+
+    /** Makes our Apple TV-style keyboard the one Android uses. */
+    fun useOurKeyboard(ctx: Context): Boolean {
+        val id = "${ctx.packageName}/.TvKeyboard"
+        shell(ctx, "ime enable $id")
+        shell(ctx, "ime set $id")
+        shell(ctx, "settings put secure default_input_method ${ctx.packageName}/${ctx.packageName}.TvKeyboard")
+        return TvKeyboard.isDefault(ctx)
     }
 
     /** Silent install (used for updates). The app restarts itself afterwards. */
@@ -138,8 +155,7 @@ object Adb {
         shell(ctx, "settings put secure enabled_accessibility_services $pkg/$pkg.FocusWatcher")
         shell(ctx, "settings put secure accessibility_enabled 1")
         // Apple TV-style keyboard instead of the stock one
-        shell(ctx, "ime enable $pkg/.TvKeyboard")
-        shell(ctx, "ime set $pkg/.TvKeyboard")
+        useOurKeyboard(ctx)
         // Correct clock: network time on, Chișinău time zone
         shell(ctx, "settings put global auto_time 1")
         shell(ctx, "settings put global auto_time_zone 0")

@@ -56,7 +56,7 @@ class TvKeyboard : InputMethodService() {
         super.onFinishInputView(finishingInput)
     }
 
-    private fun currentText(): String =
+    fun currentText(): String =
         currentInputConnection?.getExtractedText(ExtractedTextRequest(), 0)?.text?.toString() ?: ""
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -127,6 +127,18 @@ class TvKeyboard : InputMethodService() {
             if (!active) return false
             kb.main.post { kb.replaceAll(value) }
             return true
+        }
+
+        fun insert(value: String): Boolean {
+            val kb = instance ?: return false
+            if (!active) return false
+            kb.main.post { kb.currentInputConnection?.commitText(value, 1); text = kb.currentText() }
+            return true
+        }
+
+        fun isDefault(ctx: android.content.Context): Boolean {
+            val cur = android.provider.Settings.Secure.getString(ctx.contentResolver, "default_input_method") ?: return false
+            return cur.startsWith(ctx.packageName + "/")
         }
 
         fun submit(): Boolean {

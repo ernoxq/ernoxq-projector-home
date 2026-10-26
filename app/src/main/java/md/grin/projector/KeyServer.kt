@@ -24,6 +24,14 @@ object KeyServer {
             val reader = System.`in`.bufferedReader()
             while (true) {
                 val line = reader.readLine() ?: break
+                if (line.startsWith("t ")) {
+                    // Text line: deliver the characters directly to the focused field.
+                    val text = java.net.URLDecoder.decode(line.substring(2), "UTF-8")
+                    val ev = KeyEvent(SystemClock.uptimeMillis(), text, KeyCharacterMap.VIRTUAL_KEYBOARD, 0)
+                    ev.source = InputDevice.SOURCE_KEYBOARD
+                    inject.invoke(im, ev, 0)
+                    continue
+                }
                 val code = line.trim().toIntOrNull() ?: continue
                 val now = SystemClock.uptimeMillis()
                 val down = KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_KEYBOARD)

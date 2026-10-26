@@ -97,6 +97,7 @@ class MainActivity : Activity() {
         App.isForeground = true
         if (tilesDirty) { renderTiles(); tilesDirty = false }
         val now = android.os.SystemClock.elapsedRealtime()
+        if (!TvKeyboard.isDefault(this)) Thread { Adb.useOurKeyboard(applicationContext) }.start()
         if (now - lastTrim > 5 * 60_000) {
             lastTrim = now
             Thread { Adb.shell(applicationContext, "am kill-all") }.start()
@@ -429,8 +430,10 @@ class MainActivity : Activity() {
         val bright = Picture.isOn(this)
         val warm = Picture.isWarm(this)
         val volUi = getSharedPreferences("home", MODE_PRIVATE).getString("volume_ui", null)
+        val kbOk = TvKeyboard.isDefault(this)
         AlertDialog.Builder(this, R.style.Dialog)
             .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
+                "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная — нажми «Настроить автоматически»") +
                 (volUi?.let { "\nРодная громкость: $it" } ?: ""))
             .setItems(arrayOf(
                 if (bright) "Яркий режим: включён — выключить" else "Яркий режим: выключен — включить",

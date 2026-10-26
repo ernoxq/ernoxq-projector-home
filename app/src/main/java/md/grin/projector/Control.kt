@@ -33,6 +33,8 @@ object Control {
      */
     fun typeText(ctx: Context, text: String): Boolean {
         if (text.isEmpty()) return false
+        if (TvKeyboard.insert(text)) return true
+        if (Adb.chars(ctx, text)) return true
         val latch = java.util.concurrent.CountDownLatch(1)
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             try {

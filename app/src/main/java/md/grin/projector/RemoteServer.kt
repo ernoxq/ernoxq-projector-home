@@ -99,7 +99,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             }
             "/api/text" -> ok(out, json("ok" to Control.typeText(ctx, q("t"))))
             // Live typing: replaces the focused field's text as the phone keyboard types
-            "/api/settext" -> ok(out, json("ok" to (FocusWatcher.setText(q("t")) || Control.typeText(ctx, q("t")))))
+            "/api/settext" -> ok(out, json("ok" to (TvKeyboard.setText(q("t")) || FocusWatcher.setText(q("t")) || Control.typeText(ctx, q("t")))))
+            "/api/submit" -> ok(out, json("ok" to (TvKeyboard.submit() || Control.key(ctx, "enter"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/update" -> {
                 Thread { Updater.check(ctx) }.start()
@@ -132,9 +133,9 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("muted", muted)
             .put("adb", Adb.connected)
             .put("mediaAccess", Media.hasAccess(ctx))
-            .put("typing", FocusWatcher.typing)
-            .put("typingAt", FocusWatcher.changedAt)
-            .put("text", FocusWatcher.text)
+            .put("typing", TvKeyboard.active || FocusWatcher.typing)
+            .put("typingAt", maxOf(TvKeyboard.changedAt, FocusWatcher.changedAt))
+            .put("text", if (TvKeyboard.active) TvKeyboard.text else FocusWatcher.text)
             .put("focusWatch", FocusWatcher.enabled)
         if (np != null) {
             o.put("media", JSONObject()

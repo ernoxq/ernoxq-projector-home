@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="keyboard_name">Projector Home</string>
     <string name="focus_watcher_desc">Показывает клавиатуру на телефоне, когда на проекторе выбрано поле для текста.</string>
 </resources>

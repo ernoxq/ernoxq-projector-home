@@ -233,7 +233,7 @@ function showKbar(text){
 function hideKbar(byUser){kbarOpen=false;editing=false;kbar.classList.remove('show');kin.blur();if(byUser)dismissedAt=Date.now()}
 kin.addEventListener('focus',()=>{editing=true});
 kin.addEventListener('input',()=>{clearTimeout(liveT);liveT=setTimeout(()=>api('/api/settext?t='+encodeURIComponent(kin.value)),120)});
-function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>key('enter'));hideKbar(true)}
+function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
 kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitKbar()}});
 
 let lastArt='';

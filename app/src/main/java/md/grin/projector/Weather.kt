@@ -16,6 +16,19 @@ data class WeatherNow(val temp: Int, val code: Int, val city: String) {
         }
 }
 
+/** Real time in Chișinău, even if the projector's clock or time zone is wrong. */
+object Clock {
+    @Volatile private var skew = 0L
+    val zone: java.util.TimeZone = java.util.TimeZone.getTimeZone("Europe/Chisinau")
+
+    fun correct(serverMillis: Long) {
+        val s = serverMillis - System.currentTimeMillis()
+        skew = if (kotlin.math.abs(s) > 90_000) s else 0L
+    }
+
+    fun now(): java.util.Date = java.util.Date(System.currentTimeMillis() + skew)
+}
+
 /** Free Open-Meteo forecast (no key). Kept for 30 minutes so the projector isn't hitting the network constantly. */
 object Weather {
     private var cached: WeatherNow? = null
@@ -36,6 +49,7 @@ object Weather {
             c.connectTimeout = 8000
             c.readTimeout = 8000
             val body = c.inputStream.bufferedReader().use { it.readText() }
+            if (c.date > 0) Clock.correct(c.date)
             c.disconnect()
             val cur = JSONObject(body).getJSONObject("current")
             WeatherNow(cur.getDouble("temperature_2m").roundToInt(), cur.getInt("weather_code"), city(ctx)).also {

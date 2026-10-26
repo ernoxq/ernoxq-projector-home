@@ -65,6 +65,19 @@
         </service>
 
         <service
+            android:name=".TvKeyboard"
+            android:exported="true"
+            android:label="Projector Home"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/tv_keyboard" />
+        </service>
+
+        <service
             android:name=".FocusWatcher"
             android:exported="true"
             android:label="Projector Home: клавиатура на телефоне"

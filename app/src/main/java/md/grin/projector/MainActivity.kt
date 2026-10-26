@@ -263,7 +263,7 @@ class MainActivity : Activity() {
             val tile = Ui.col(this).apply {
                 setPadding(px(20), px(20), px(20), px(20))
                 Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else INK)
-                setOnClickListener { if (entry != null) Apps.launch(this@MainActivity, entry) else Apps.launchKey(this@MainActivity, spec.key) }
+                setOnClickListener { Apps.invalidate(); Apps.launchKey(this@MainActivity, spec.key) }
                 setOnLongClickListener { pickApp(spec); true }
             }
             val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
@@ -310,19 +310,19 @@ class MainActivity : Activity() {
 
     // ---------- live data ----------
 
-    private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
-    private val dateFmt = SimpleDateFormat("EEEE, d MMMM", Locale("ru"))
+    private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = Clock.zone }
+    private val dateFmt = SimpleDateFormat("EEEE, d MMMM", Locale("ru")).apply { timeZone = Clock.zone }
     private var lastMinute = ""
 
     /** Redraws the header only when the minute changes. */
     private fun renderClock() {
-        val now = Date()
+        val now = Clock.now()
         val t = timeFmt.format(now)
         if (t == lastMinute) return
         lastMinute = t
         clock.text = t
         date.text = dateFmt.format(now).replaceFirstChar { it.uppercase() }
-        val h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val h = Calendar.getInstance(Clock.zone).apply { time = now }.get(Calendar.HOUR_OF_DAY)
         val hello = when (h) { in 5..11 -> "Доброе утро"; in 12..17 -> "Добрый день"; in 18..22 -> "Добрый вечер"; else -> "Доброй ночи" }
         val name = getSharedPreferences("home", MODE_PRIVATE).getString("name", "Эрнест")
         val text = "$hello, $name,\nчто включаем?"

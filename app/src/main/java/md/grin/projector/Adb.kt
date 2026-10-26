@@ -128,6 +128,14 @@ object Adb {
         // Lets the phone remote see when a text field is selected on the projector
         shell(ctx, "settings put secure enabled_accessibility_services $pkg/$pkg.FocusWatcher")
         shell(ctx, "settings put secure accessibility_enabled 1")
+        // Apple TV-style keyboard instead of the stock one
+        shell(ctx, "ime enable $pkg/.TvKeyboard")
+        shell(ctx, "ime set $pkg/.TvKeyboard")
+        // Correct clock: network time on, Chișinău time zone
+        shell(ctx, "settings put global auto_time 1")
+        shell(ctx, "settings put global auto_time_zone 0")
+        shell(ctx, "service call alarm 3 s16 Europe/Chisinau")
+        shell(ctx, "setprop persist.sys.timezone Europe/Chisinau")
         nameAirPlay(ctx)
         return true
     }

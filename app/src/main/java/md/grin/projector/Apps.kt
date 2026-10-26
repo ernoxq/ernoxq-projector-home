@@ -110,7 +110,8 @@ object Apps {
             false
         }
         if (!started || !App.isForeground) {
-            Thread { Adb.shell(ctx, "am start -n ${entry.component.flattenToShortString()}") }.start()
+            val cn = (intent.component ?: entry.component).flattenToShortString()
+            Thread { Adb.shell(ctx, "am start -n $cn") }.start()
         }
         return true
     }

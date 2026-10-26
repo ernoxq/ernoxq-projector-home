@@ -97,7 +97,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 onMain { r = Apps.launchKey(ctx, q("app")) }
                 ok(out, json("ok" to r))
             }
-            "/api/text" -> ok(out, json("ok" to Adb.text(ctx, q("t"))))
+            "/api/text" -> ok(out, json("ok" to Control.typeText(ctx, q("t"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/apps" -> {
                 val arr = JSONArray()

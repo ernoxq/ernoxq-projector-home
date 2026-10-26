@@ -27,6 +27,27 @@ object Control {
         return Adb.key(ctx, code)
     }
 
+    /**
+     * Types text from the phone into whatever field is focused on the projector (browser address bar, search…).
+     * Any language works: the text goes through the clipboard and is pasted, since `input text` only knows Latin.
+     */
+    fun typeText(ctx: Context, text: String): Boolean {
+        if (text.isEmpty()) return false
+        val latch = java.util.concurrent.CountDownLatch(1)
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            try {
+                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                cm?.setPrimaryClip(android.content.ClipData.newPlainText("remote", text))
+            } catch (_: Exception) {
+            } finally {
+                latch.countDown()
+            }
+        }
+        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
+        if (Adb.key(ctx, KeyEvent.KEYCODE_PASTE)) return true
+        return text.all { it.code < 128 } && Adb.text(ctx, text)
+    }
+
     fun volume(ctx: Context, dir: String): Boolean {
         val am = ctx.getSystemService(AudioManager::class.java) ?: return false
         val adj = when (dir) {

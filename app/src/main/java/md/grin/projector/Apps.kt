@@ -29,7 +29,7 @@ object Apps {
         TileSpec("spotify", "Spotify", "Музыка", listOf("com.spotify.tv.android", "com.spotify.music"), listOf("spotify"), fallbackIcon = R.drawable.ic_music),
         TileSpec("cast", "Трансляция", "iPhone и Mac", listOf(AIRPLAY, "com.ionitech.airscreen"), listOf("airplay", "airscreen", "mirror", "cast"), dark = true, fallbackIcon = R.drawable.ic_cast),
         TileSpec("hdmi", "HDMI", "Внешний вход", emptyList(), listOf("hdmi", "source", "signal", "input", "tvinput"), fallbackIcon = R.drawable.ic_hdmi),
-        TileSpec("files", "Файлы", "Флешка и загрузки", listOf("com.softwinner.TvdFileManager", "com.android.documentsui"), listOf("file", "файл", "explorer", "media center", "mediacenter"), fallbackIcon = R.drawable.ic_folder),
+        TileSpec("browser", "Браузер", "Сайты и поиск", listOf("com.phlox.tvwebbrowser", "com.android.chrome", "org.mozilla.firefox", "com.opera.browser", "com.android.browser", "com.cloudmosa.puffinTV"), listOf("browser", "браузер", "chrome", "firefox"), fallbackIcon = R.drawable.ic_globe),
     )
 
     private var cache: List<AppEntry>? = null
@@ -87,10 +87,11 @@ object Apps {
 
     /** Opens an app. Falls back to ADB when Android blocks a start from the background (phone remote). */
     fun launch(ctx: Context, entry: AppEntry): Boolean {
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            component = entry.component
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        }
+        val pm = ctx.packageManager
+        val intent = (pm.getLeanbackLaunchIntentForPackage(entry.pkg)
+            ?: pm.getLaunchIntentForPackage(entry.pkg)
+            ?: Intent(Intent.ACTION_MAIN).setComponent(entry.component))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         val started = try {
             ctx.startActivity(intent); true
         } catch (e: Exception) {
@@ -113,7 +114,14 @@ object Apps {
         val entry = if (spec != null) resolve(ctx, spec) else all(ctx).firstOrNull { it.pkg == key }
         if (entry != null) return launch(ctx, entry)
         if (key == "hdmi") return openSettings(ctx)
-        return false
+        // Not installed yet: open its page in Google Play so it's one click to install.
+        val pkg = spec?.candidates?.firstOrNull() ?: return false
+        return try {
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun goHome(ctx: Context): Boolean {

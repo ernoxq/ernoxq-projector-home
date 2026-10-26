@@ -174,7 +174,30 @@ object Adb {
         shell(ctx, "service call alarm 3 s16 Europe/Chisinau")
         shell(ctx, "setprop persist.sys.timezone Europe/Chisinau")
         nameAirPlay(ctx)
+        airplayReady(ctx)
         return true
+    }
+
+    /**
+     * Makes AirPlay instant: the receiver may jump onto the screen by itself when an iPhone or Mac
+     * connects (Android 11 needs the "draw over other apps" permission for that, which the projector's
+     * settings menu doesn't offer), keeps running in the background, and is started if it isn't running.
+     */
+    fun airplayReady(ctx: Context) {
+        if (!Apps.isInstalled(ctx, Apps.AIRPLAY)) return
+        val air = Apps.AIRPLAY
+        if (!shell(ctx, "appops set $air SYSTEM_ALERT_WINDOW allow")) return
+        shell(ctx, "dumpsys deviceidle whitelist +$air")
+        for ((k, v) in listOf("auto_start" to "true", "boot_auto_start" to "true", "run_in_background" to "true", "auto_fullscreen" to "true")) {
+            shell(ctx, "am broadcast -a $air.SET_SETTING -n $air/.SettingsReceiver --es key $k --es value $v")
+        }
+        val running = run(ctx, "pidof $air")?.trim().orEmpty().isNotEmpty()
+        if (!running) {
+            // Opening the receiver once starts its background service; then come straight back home.
+            shell(ctx, "am start -n $air/.MainActivity")
+            Thread.sleep(2500)
+            shell(ctx, "input keyevent 3")
+        }
     }
 
     /**

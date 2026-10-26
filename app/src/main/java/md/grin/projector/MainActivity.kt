@@ -140,7 +140,7 @@ class MainActivity : Activity() {
             clipChildren = false
             clipToPadding = false
         }
-        root.addView(header(), Ui.lp(MATCH, px(56)))
+        root.addView(header(), Ui.lp(MATCH, px(76)))
         root.addView(Ui.flex(this))
         root.addView(topRow(), Ui.lp(MATCH, px(200)))
         root.addView(Ui.flex(this))
@@ -153,29 +153,30 @@ class MainActivity : Activity() {
 
     private fun header(): View {
         val h = Ui.row(this)
-        h.addView(Ui.circleButton(this, R.drawable.ic_menu, 52, Ui.GLASS).apply { setOnClickListener { showMenu() } }, Ui.lp(px(52), px(52)))
+        h.addView(Ui.circleButton(this, R.drawable.ic_menu, 64, Ui.GLASS, iconSize = 26).apply { setOnClickListener { showMenu() } }, Ui.lp(px(64), px(64)))
         h.addView(Ui.flex(this))
+        // Time, date and weather in one larger, easy-to-read pill.
         val pill = Ui.row(this).apply {
-            background = Ui.round(Ui.GLASS, 30)
-            setPadding(px(22), 0, px(8), 0)
+            background = Ui.round(Ui.GLASS, 38)
+            setPadding(px(28), 0, px(10), 0)
         }
-        clock = Ui.text(this, "", 26, 600).apply { letterSpacing = -0.03f }
+        clock = Ui.text(this, "", 36, 600).apply { letterSpacing = -0.03f }
         pill.addView(clock)
-        pill.addView(View(this).apply { setBackgroundColor(Ui.DIVIDER) }, Ui.lp(px(1), px(22)).apply { leftMargin = px(16); rightMargin = px(16) })
-        date = Ui.text(this, "", 17, 500)
+        pill.addView(View(this).apply { setBackgroundColor(Ui.DIVIDER) }, Ui.lp(px(1.5f), px(30)).apply { leftMargin = px(20); rightMargin = px(20) })
+        date = Ui.text(this, "", 23, 500)
         pill.addView(date)
         val w = Ui.row(this).apply {
-            background = Ui.round(Ui.WHITE, 21)
-            setPadding(px(12), 0, px(16), 0)
+            background = Ui.round(Ui.WHITE, 28)
+            setPadding(px(16), 0, px(22), 0)
         }
-        weatherIcon = Ui.icon(this, R.drawable.ic_cloud, 22)
+        weatherIcon = Ui.icon(this, R.drawable.ic_cloud, 30)
         w.addView(weatherIcon)
-        weatherText = Ui.text(this, Weather.city(this), 17, 600)
-        w.addView(weatherText, Ui.lp(WRAP, WRAP).apply { leftMargin = px(8) })
-        pill.addView(w, Ui.lp(WRAP, px(42)).apply { leftMargin = px(18) })
-        h.addView(pill, Ui.lp(WRAP, px(56)))
+        weatherText = Ui.text(this, Weather.city(this), 22, 600)
+        w.addView(weatherText, Ui.lp(WRAP, WRAP).apply { leftMargin = px(10) })
+        pill.addView(w, Ui.lp(WRAP, px(56)).apply { leftMargin = px(22) })
+        h.addView(pill, Ui.lp(WRAP, px(76)))
         h.addView(Ui.flex(this))
-        h.addView(Ui.circleButton(this, R.drawable.ic_bell, 52, Ui.GLASS).apply { setOnClickListener { showMenu() } }, Ui.lp(px(52), px(52)))
+        h.addView(Ui.circleButton(this, R.drawable.ic_bell, 64, Ui.GLASS, iconSize = 26).apply { setOnClickListener { showMenu() } }, Ui.lp(px(64), px(64)))
         return h
     }
 

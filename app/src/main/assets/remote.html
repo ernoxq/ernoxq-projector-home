@@ -51,12 +51,12 @@ svg{display:block}
 .b.big{width:112px;height:112px;background:linear-gradient(180deg,#1B1B1D,#101011)}
 
 /* ---------- keyboard bar (only when a text field is selected on the projector) ---------- */
-.kbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);max-width:436px;margin:0 auto;background:var(--accent);border-radius:28px;padding:8px;display:flex;gap:8px;align-items:center;transform:translateY(calc(100% + 120px));visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:5}
+.kbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);max-width:436px;margin:0 auto;background:rgba(30,30,33,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:30px;padding:7px;display:flex;gap:8px;align-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(255,255,255,.08),0 10px 40px rgba(0,0,0,.6);transform:translateY(calc(100% + 120px));visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s;z-index:5}
 .kbar.show{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s}
-.kbar input{flex:1;min-width:0;height:52px;border-radius:22px;border:none;padding:0 16px;font:500 17px 'Inter Tight',sans-serif;background:#fff;color:#121212;outline:none;user-select:text;-webkit-user-select:text}
-.kbar input::placeholder{color:#8A8F99}
-.kbar button{height:52px;padding:0 18px;border-radius:22px;background:#121212;color:#fff;font-weight:600;font-size:15px;white-space:nowrap}
-.kbar .x{width:44px;padding:0;background:transparent;color:#121212;display:flex;align-items:center;justify-content:center}
+.kbar input{flex:1;min-width:0;height:50px;border-radius:25px;border:none;padding:0 18px;font:500 17px 'Inter Tight',sans-serif;background:#2C2C2E;color:#F5F5F7;caret-color:#F5F5F7;outline:none;user-select:text;-webkit-user-select:text}
+.kbar input::placeholder{color:#8E8E93}
+.kbar button{height:50px;padding:0 20px;border-radius:25px;background:#F5F5F7;color:#1C1C1E;font-weight:600;font-size:15px;white-space:nowrap}
+.kbar .x{width:44px;padding:0;background:transparent;color:#F5F5F7;display:flex;align-items:center;justify-content:center}
 
 .ytpill{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 150px);transform:translate(-50%,20px);opacity:0;pointer-events:none;height:48px;padding:0 20px 0 14px;border-radius:24px;background:#F5F5F7;color:#1C1C1E;font-weight:600;font-size:16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,1,.3,1),opacity .25s;z-index:4;white-space:nowrap}
 .ytpill.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
@@ -163,7 +163,7 @@ svg{display:block}
 <button class="ytpill" id="ytpill" onclick="openYtSearch()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg>Поиск в YouTube</button>
 
 <div class="kbar" id="kbar">
-  <button class="x" aria-label="Скрыть" onclick="hideKbar(true)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <button class="x" aria-label="Скрыть" onclick="hideKbar(true)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <input id="kin" placeholder="Нажми и печатай" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
   <button onclick="submitKbar()">Готово</button>
 </div>

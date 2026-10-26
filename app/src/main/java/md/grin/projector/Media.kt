@@ -36,6 +36,7 @@ object Media {
     private var controller: MediaController? = null
     private var attached = false
     private val listeners = LinkedHashSet<() -> Unit>()
+    private val labels = HashMap<String, String>()
 
     fun hasAccess(ctx: Context): Boolean {
         val flat = Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners") ?: return false
@@ -88,11 +89,13 @@ object Media {
         val title = md.getString(MediaMetadata.METADATA_KEY_TITLE) ?: md.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE) ?: return null
         val artist = md.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: md.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST) ?: md.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE) ?: ""
         val art = md.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: md.getBitmap(MediaMetadata.METADATA_KEY_ART) ?: md.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
-        val source = try {
-            val pm = ctx.packageManager
-            pm.getApplicationLabel(pm.getApplicationInfo(c.packageName, 0)).toString()
-        } catch (e: Exception) {
-            c.packageName
+        val source = labels.getOrPut(c.packageName) {
+            try {
+                val pm = ctx.packageManager
+                pm.getApplicationLabel(pm.getApplicationInfo(c.packageName, 0)).toString()
+            } catch (e: Exception) {
+                c.packageName
+            }
         }
         val playing = st?.state == PlaybackState.STATE_PLAYING
         var pos = st?.position ?: 0L

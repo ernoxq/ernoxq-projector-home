@@ -1,74 +1,26 @@
 package md.grin.projector
 
 import android.accessibilityservice.AccessibilityService
-import android.os.Bundle
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 
 /**
- * Notices when a text field gets focus in any app on the projector (YouTube search, a browser
- * address bar…), so the phone remote can pop up its keyboard bar. It can also put text straight
- * into that field, letter by letter, in any language.
+ * Catches the projector remote's volume keys so our Apple TV-style volume capsule shows
+ * instead of the stock panel. It asks for no other events, so apps don't do extra work for it.
  */
 class FocusWatcher : AccessibilityService() {
-    override fun onServiceConnected() {
-        instance = this
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val e = event ?: return
-        when (e.eventType) {
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                val src = e.source
-                typing = src?.isEditable == true
-                text = if (typing) src?.text?.toString() ?: "" else ""
-                if (typing) changedAt = System.currentTimeMillis()
-            }
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                // A new screen: re-check what has focus there.
-                val f = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-                typing = f?.isEditable == true
-                if (!typing) text = ""
-            }
-        }
-    }
-
-    override fun onKeyEvent(event: android.view.KeyEvent): Boolean {
+    override fun onKeyEvent(event: KeyEvent): Boolean {
         val dir = when (event.keyCode) {
-            android.view.KeyEvent.KEYCODE_VOLUME_UP -> "up"
-            android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> "down"
-            android.view.KeyEvent.KEYCODE_VOLUME_MUTE -> "mute"
+            KeyEvent.KEYCODE_VOLUME_UP -> "up"
+            KeyEvent.KEYCODE_VOLUME_DOWN -> "down"
+            KeyEvent.KEYCODE_VOLUME_MUTE -> "mute"
             else -> return false
         }
         if (!VolumeHud.available(this)) return false
-        if (event.action == android.view.KeyEvent.ACTION_DOWN) Control.volume(this, dir)
+        if (event.action == KeyEvent.ACTION_DOWN) Control.volume(this, dir)
         return true
     }
 
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
-
-    override fun onDestroy() {
-        if (instance === this) instance = null
-        super.onDestroy()
-    }
-
-    companion object {
-        @Volatile var instance: FocusWatcher? = null
-        @Volatile var typing = false
-        @Volatile var text = ""
-        @Volatile var changedAt = 0L
-
-        val enabled: Boolean get() = instance != null
-
-        /** Replaces the focused field's text. Returns false if there's no editable field in focus. */
-        fun setText(value: String): Boolean {
-            val svc = instance ?: return false
-            val node = svc.rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
-            if (!node.isEditable) return false
-            val args = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }
-            val ok = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-            if (ok) text = value
-            return ok
-        }
-    }
 }

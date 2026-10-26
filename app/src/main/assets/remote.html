@@ -77,8 +77,8 @@ svg{display:block}
 .typer input::placeholder{color:#6E6E73}
 .typer button{height:50px;padding:0 20px;border-radius:25px;background:var(--fg);color:#000;font-weight:600;font-size:15px}
 /* keyboard bar: pops up by itself when a text field is selected on the projector */
-.kbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);max-width:436px;margin:0 auto;background:var(--accent);border-radius:28px;padding:8px;display:flex;gap:8px;align-items:center;transform:translateY(140%);transition:transform .3s cubic-bezier(.2,.8,.2,1);box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:5}
-.kbar.show{transform:none}
+.kbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);max-width:436px;margin:0 auto;background:var(--accent);border-radius:28px;padding:8px;display:flex;gap:8px;align-items:center;transform:translateY(calc(100% + 120px));visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:5}
+.kbar.show{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .kbar input{flex:1;min-width:0;height:52px;border-radius:22px;border:none;padding:0 16px;font:500 17px 'Inter Tight',sans-serif;background:#fff;color:#121212;outline:none;user-select:text;-webkit-user-select:text}
 .kbar input::placeholder{color:#8A8F99}
 .kbar button{height:52px;padding:0 18px;border-radius:22px;background:#121212;color:#fff;font-weight:600;font-size:15px;white-space:nowrap}
@@ -270,7 +270,7 @@ function refresh(){
     if(k!==lastArt){lastArt=k;$('art').style.backgroundImage=k?'url(/api/art?'+Date.now()+')':'none'}
   });
 }
-refresh();setInterval(()=>{if(!document.hidden)refresh()},1000);
+refresh();setInterval(()=>{if(!document.hidden)refresh()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 </script>
 </body>

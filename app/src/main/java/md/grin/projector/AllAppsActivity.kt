@@ -40,16 +40,24 @@ class AllAppsActivity : Activity() {
                 override fun getItemId(p: Int) = p.toLong()
                 override fun getView(p: Int, convert: View?, parent: ViewGroup?): View {
                     val a = apps[p]
+                    (convert?.tag as? Holder)?.let { h ->
+                        h.icon.setImageDrawable(Apps.icon(this@AllAppsActivity, a))
+                        h.label.text = a.label
+                        return convert
+                    }
                     val card = Ui.col(this@AllAppsActivity).apply {
                         setPadding(px(18), px(18), px(18), px(16))
                         background = Ui.round(Ui.WHITE, 28)
                         layoutParams = android.widget.AbsListView.LayoutParams(MATCH, px(150))
                     }
                     val box = FrameLayout(this@AllAppsActivity).apply { background = Ui.round(Ui.SOFT, 16) }
-                    box.addView(ImageView(this@AllAppsActivity).apply { setImageDrawable(Apps.icon(this@AllAppsActivity, a)) }, FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER))
+                    val icon = ImageView(this@AllAppsActivity).apply { setImageDrawable(Apps.icon(this@AllAppsActivity, a)) }
+                    box.addView(icon, FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER))
                     card.addView(box, Ui.lp(px(56), px(56)))
                     card.addView(Ui.flex(this@AllAppsActivity))
-                    card.addView(Ui.text(this@AllAppsActivity, a.label, 17, 600))
+                    val label = Ui.text(this@AllAppsActivity, a.label, 17, 600)
+                    card.addView(label)
+                    card.tag = Holder(icon, label)
                     return card
                 }
             }
@@ -72,3 +80,5 @@ class AllAppsActivity : Activity() {
         setContentView(root)
     }
 }
+
+private class Holder(val icon: ImageView, val label: android.widget.TextView)

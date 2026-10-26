@@ -119,6 +119,25 @@ object Adb {
         shell(ctx, "settings put global transition_animation_scale 0.5")
         shell(ctx, "settings put global animator_duration_scale 0.5")
         shell(ctx, "dumpsys deviceidle whitelist +$pkg")
+        nameAirPlay(ctx)
         return true
+    }
+
+    /**
+     * Gives the AirPlay receiver a clean name ("AirPlay") in the iPhone/Mac Screen Mirroring list.
+     * Done once; the receiver is restarted so the new name shows up right away.
+     */
+    fun nameAirPlay(ctx: Context, name: String = "AirPlay") {
+        val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+        if (prefs.getString("airplay_name", null) == name) return
+        if (!Apps.isInstalled(ctx, Apps.AIRPLAY)) return
+        val air = Apps.AIRPLAY
+        val ok = shell(ctx, "am broadcast -a $air.SET_SETTING -n $air/.SettingsReceiver --es key server_name --es value '$name'")
+        if (!ok) return
+        shell(ctx, "am force-stop $air")
+        shell(ctx, "am start -n $air/.MainActivity")
+        Thread.sleep(2500)
+        shell(ctx, "input keyevent 3")
+        prefs.edit().putString("airplay_name", name).apply()
     }
 }

@@ -77,7 +77,7 @@ object SleepTimer {
                     offAt = 0L
                     hideNotice()
                     lastActivity = now
-                    Thread { Adb.key(ctx, android.view.KeyEvent.KEYCODE_POWER) }.start()
+                    Thread { Adb.powerOff(ctx) }.start()
                 } else {
                     notice?.text = message(left)
                 }

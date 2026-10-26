@@ -88,6 +88,16 @@ object Adb {
         return false
     }
 
+    /**
+     * Switches the projector off for real. Pressing the power key only opens the firmware's
+     * "Power off / Restart" menu, so ask Android to shut down directly instead.
+     */
+    fun powerOff(ctx: Context): Boolean {
+        if (shell(ctx, "svc power shutdown")) return true
+        if (shell(ctx, "am start -a com.android.internal.intent.action.REQUEST_SHUTDOWN --ez android.intent.extra.KEY_CONFIRM false --activity-clear-task")) return true
+        return shell(ctx, "am broadcast -a android.intent.action.ACTION_REQUEST_SHUTDOWN --ez android.intent.extra.KEY_CONFIRM false")
+    }
+
     /** Makes our Apple TV-style keyboard the one Android uses. */
     fun useOurKeyboard(ctx: Context): Boolean {
         val id = "${ctx.packageName}/.TvKeyboard"

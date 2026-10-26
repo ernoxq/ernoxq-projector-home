@@ -23,6 +23,7 @@ object Control {
 
     fun key(ctx: Context, name: String): Boolean {
         if (name == "home") return Apps.goHome(ctx)
+        if (name == "power") return Adb.powerOff(ctx)
         val code = keys[name] ?: return false
         return Adb.key(ctx, code)
     }

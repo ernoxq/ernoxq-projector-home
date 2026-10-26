@@ -102,7 +102,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/settext" -> ok(out, json("ok" to (TvKeyboard.setText(q("t")) || Control.typeText(ctx, q("t")))))
             "/api/submit" -> ok(out, json("ok" to (TvKeyboard.submit() || Control.key(ctx, "enter"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
-            "/api/bright" -> ok(out, json("ok" to Picture.set(ctx, q("on") == "1"), "on" to Picture.isOn(ctx)))
+            "/api/brightness" -> ok(out, json("ok" to Picture.setBrightness(ctx, q("v").toIntOrNull() ?: 100)))
+            "/api/warmth" -> ok(out, json("ok" to Picture.setWarmth(ctx, q("v").toIntOrNull() ?: 50)))
             "/api/warm" -> ok(out, json("ok" to Picture.setWarm(ctx, q("on") == "1"), "on" to Picture.isWarm(ctx)))
             "/api/update" -> {
                 Thread { Updater.check(ctx) }.start()
@@ -138,7 +139,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("typing", TvKeyboard.active)
             .put("typingAt", TvKeyboard.changedAt)
             .put("text", TvKeyboard.text)
-            .put("bright", Picture.isOn(ctx))
+            .put("brightness", Picture.brightness(ctx))
+            .put("warmth", Picture.warmth(ctx))
             .put("warm", Picture.isWarm(ctx))
         if (np != null) {
             o.put("media", JSONObject()

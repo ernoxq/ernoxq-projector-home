@@ -154,11 +154,13 @@ svg{display:block}
     <button onclick="go('hdmi')">HDMI</button>
     <button class="acc" onclick="go('cast')">Трансляция</button>
   </div>
-  <h3>Картинка</h3>
+  <h3>Яркость</h3>
+  <div class="slider" id="bslider"><div class="fill" id="bfill"></div><div class="lbl"><span>☀︎</span><span id="bl">100%</span></div></div>
+  <h3>Night Shift</h3>
   <div class="apps" style="grid-template-columns:1fr">
-    <button id="bright" onclick="toggleBright()">Яркий режим (для света в комнате): выкл</button>
-    <button id="warm" onclick="toggleWarm()">Night Shift (тёплые цвета): выкл</button>
+    <button id="warm" onclick="toggleWarm()">Night Shift: выкл</button>
   </div>
+  <div class="slider" id="wslider" style="display:none"><div class="fill" id="wfill" style="background:#FFB067"></div><div class="lbl"><span>Менее тёплый</span><span>Более тёплый</span></div></div>
 </div>
 
 <script>
@@ -241,12 +243,20 @@ kin.addEventListener('input',()=>{clearTimeout(liveT);liveT=setTimeout(()=>api('
 function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
 kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitKbar()}});
 
-let brightOn=false;
-function toggleBright(){api('/api/bright?on='+(brightOn?0:1)).then(s=>{if(s&&s.ok){brightOn=s.on;paintBright()}})}
+/* brightness and warmth sliders: drag to set, sent smoothly while dragging */
+function dragSlider(el,fillEl,onValue,min){
+  let on=false,t=null;
+  const val=e=>{const r=el.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*100)};
+  const set=v=>{v=Math.max(min,v);fillEl.style.width=Math.max(v,8)+'%';clearTimeout(t);t=setTimeout(()=>onValue(v),70);return v};
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);on=true;el.dataset.drag=1;set(val(e))});
+  el.addEventListener('pointermove',e=>{if(on)set(val(e))});
+  ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{on=false;setTimeout(()=>{delete el.dataset.drag},500)}));
+}
+dragSlider($('bslider'),$('bfill'),v=>{$('bl').textContent=v+'%';api('/api/brightness?v='+v)},5);
+dragSlider($('wslider'),$('wfill'),v=>api('/api/warmth?v='+v),0);
 let warmOn=false;
 function toggleWarm(){api('/api/warm?on='+(warmOn?0:1)).then(s=>{if(s&&s.ok){warmOn=s.on;paintWarm()}})}
-function paintWarm(){const b=$('warm');b.textContent='Night Shift (тёплые цвета): '+(warmOn?'вкл':'выкл');b.classList.toggle('acc',warmOn)}
-function paintBright(){const b=$('bright');b.textContent='Яркий режим (для света в комнате): '+(brightOn?'вкл':'выкл');b.classList.toggle('acc',brightOn)}
+function paintWarm(){const b=$('warm');b.textContent='Night Shift: '+(warmOn?'вкл':'выкл');b.classList.toggle('acc',warmOn);$('wslider').style.display=warmOn?'block':'none'}
 
 let lastArt='';
 function refresh(){
@@ -258,7 +268,8 @@ function refresh(){
     $('mute').classList.toggle('on',!!s.muted);
     if(!dragging)setFill(s.volume);
     $('warn').classList.toggle('show',!s.adb);
-    if(s.bright!==undefined&&s.bright!==brightOn){brightOn=s.bright;paintBright()}
+    if(s.brightness!==undefined&&!$('bslider').dataset.drag){$('bfill').style.width=Math.max(s.brightness,8)+'%';$('bl').textContent=s.brightness+'%'}
+    if(s.warmth!==undefined&&!$('wslider').dataset.drag)$('wfill').style.width=Math.max(s.warmth,8)+'%';
     if(s.warm!==undefined&&s.warm!==warmOn){warmOn=s.warm;paintWarm()}
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
     else if(!s.typing&&kbarOpen&&!editing)hideKbar(false);

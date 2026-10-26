@@ -427,7 +427,7 @@ class MainActivity : Activity() {
     private fun showMenu() {
         val adb = if (Adb.connected) "подключено" else "не подключено (${Adb.lastError ?: "ждёт разрешения"})"
         val player = if (Media.hasAccess(this)) "есть доступ" else "нет доступа"
-        val bright = Picture.isOn(this)
+        val level = Picture.brightness(this)
         val warm = Picture.isWarm(this)
         val volUi = getSharedPreferences("home", MODE_PRIVATE).getString("volume_ui", null)
         val kbOk = TvKeyboard.isDefault(this)
@@ -436,18 +436,20 @@ class MainActivity : Activity() {
                 "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная — нажми «Настроить автоматически»") +
                 (volUi?.let { "\nРодная громкость: $it" } ?: ""))
             .setItems(arrayOf(
-                if (bright) "Яркий режим: включён — выключить" else "Яркий режим: выключен — включить",
+                "Яркость: $level% — изменить (плавно — ползунком на айфоне)",
                 if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
                 "Настройки проектора",
             )) { _, i ->
                 when (i) {
-                    0 -> Thread {
-                        val ok = Picture.set(applicationContext, !bright)
-                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!bright) "Яркий режим включён" else "Обычная картинка") else "Нужно подключение «кнопок» (ADB)", android.widget.Toast.LENGTH_SHORT).show() }
-                    }.start()
+                    0 -> {
+                        // Quick steps from the remote: 100 → 70 → 45 → 20 → 100
+                        val next = when { level > 70 -> 70; level > 45 -> 45; level > 20 -> 20; else -> 100 }
+                        Picture.setBrightness(applicationContext, next)
+                        android.widget.Toast.makeText(this, "Яркость $next%", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                     1 -> Thread {
                         val ok = Picture.setWarm(applicationContext, !warm)
-                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!warm) "Night Shift включён" else "Night Shift выключен") else "Нужно подключение «кнопок» (ADB)", android.widget.Toast.LENGTH_SHORT).show() }
+                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!warm) "Night Shift включён" else "Night Shift выключен") else "Нужно разрешение на показ поверх окон: «Настроить автоматически»", android.widget.Toast.LENGTH_SHORT).show() }
                     }.start()
                     2 -> Apps.openSettings(this)
                 }

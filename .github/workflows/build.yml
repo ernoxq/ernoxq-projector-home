@@ -1,0 +1,57 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Inter Tight font
+        run: |
+          mkdir -p app/src/main/assets/fonts
+          curl -fsSL -o app/src/main/assets/fonts/InterTight.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/intertight/InterTight%5Bwght%5D.ttf" || echo "font download failed, using system font"
+          curl -fsSL -o app/src/main/assets/fonts/InterTight-Italic.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/intertight/InterTight-Italic%5Bwght%5D.ttf" || echo "italic font download failed"
+
+      - name: Build launcher
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Collect APKs (launcher + AirPlay receiver)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/projector-home.apk
+          gh release download -R jqssun/android-airplay-server -p "*.apk" -D airplay || true
+          f=$(ls airplay/*.apk 2>/dev/null | head -1)
+          if [ -n "$f" ]; then cp "$f" out/airplay-receiver.apk; else echo "AirPlay receiver APK not found"; fi
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: out/*.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Projector Home 1.0.${{ github.run_number }}
+          make_latest: true
+          files: out/*.apk

@@ -27,6 +27,9 @@ object SleepTimer {
     private var notice: TextView? = null
     private var appCtx: Context? = null
 
+    /** How long nobody has touched a remote, in milliseconds. */
+    fun idleMs(): Long = SystemClock.elapsedRealtime() - lastActivity
+
     fun isOn(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("sleep", true)
 
     fun setOn(ctx: Context, on: Boolean): Boolean {

@@ -37,8 +37,13 @@ class RemoteService : Service() {
     /** Checks GitHub for a newer build a minute after start, then every 6 hours. */
     private val updateCheck = object : Runnable {
         override fun run() {
-            Thread { Updater.check(applicationContext) }.start()
-            updates.postDelayed(this, 6 * 60 * 60_000L)
+            val quiet = App.isForeground && SleepTimer.idleMs() > 5 * 60_000L && Media.current(applicationContext)?.playing != true
+            if (quiet) {
+                Thread { Updater.check(applicationContext) }.start()
+                updates.postDelayed(this, 6 * 60 * 60_000L)
+            } else {
+                updates.postDelayed(this, 10 * 60_000L) // busy: try again in 10 minutes
+            }
         }
     }
 

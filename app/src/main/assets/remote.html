@@ -58,6 +58,8 @@ svg{display:block}
 .kbar button{height:52px;padding:0 18px;border-radius:22px;background:#121212;color:#fff;font-weight:600;font-size:15px;white-space:nowrap}
 .kbar .x{width:44px;padding:0;background:transparent;color:#121212;display:flex;align-items:center;justify-content:center}
 
+.ytpill{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 150px);transform:translate(-50%,20px);opacity:0;pointer-events:none;height:48px;padding:0 20px 0 14px;border-radius:24px;background:#F5F5F7;color:#1C1C1E;font-weight:600;font-size:16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,1,.3,1),opacity .25s;z-index:4;white-space:nowrap}
+.ytpill.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 /* ---------- control center (iOS style) ---------- */
 .cc{position:fixed;inset:0;z-index:10;background:rgba(14,14,16,.72);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);opacity:0;pointer-events:none;transition:opacity .28s ease;will-change:opacity;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .cc.show{opacity:1;pointer-events:auto}
@@ -157,6 +159,8 @@ svg{display:block}
     </button>
   </div>
 </div>
+
+<button class="ytpill" id="ytpill" onclick="openYtSearch()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg>Поиск в YouTube</button>
 
 <div class="kbar" id="kbar">
   <button class="x" aria-label="Скрыть" onclick="hideKbar(true)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -311,12 +315,13 @@ $('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();se
 
 /* ---------- keyboard bar ---------- */
 const kbar=$('kbar'),kin=$('kin');
-let kbarOpen=false,dismissedAt=0,liveT=null,editing=false;
+let kbarOpen=false,dismissedAt=0,liveT=null,editing=false,kmode='field';
+function openYtSearch(){kmode='yt';kin.value='';kin.placeholder='Поиск в YouTube';kbarOpen=true;kbar.classList.add('show');kin.focus()}
 function showKbar(text){if(kbarOpen)return;kbarOpen=true;if(!editing)kin.value=text||'';kbar.classList.add('show');try{kin.focus()}catch(e){}}
-function hideKbar(byUser){kbarOpen=false;editing=false;kbar.classList.remove('show');kin.blur();if(byUser)dismissedAt=Date.now()}
+function hideKbar(byUser){kbarOpen=false;editing=false;kbar.classList.remove('show');kin.blur();if(byUser)dismissedAt=Date.now();kmode='field';kin.placeholder='Нажми и печатай'}
 kin.addEventListener('focus',()=>{editing=true});
-kin.addEventListener('input',()=>{clearTimeout(liveT);liveT=setTimeout(()=>api('/api/settext?t='+encodeURIComponent(kin.value)),120)});
-function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
+kin.addEventListener('input',()=>{if(kmode==='yt')return;clearTimeout(liveT);liveT=setTimeout(()=>api('/api/settext?t='+encodeURIComponent(kin.value)),120)});
+function submitKbar(){if(kmode==='yt'){if(kin.value)api('/api/ytsearch?q='+encodeURIComponent(kin.value));hideKbar(true);return}clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
 kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitKbar()}});
 
 /* ---------- live state ---------- */
@@ -338,7 +343,8 @@ function refresh(){
     if(s.sleep!==undefined&&s.sleep!==sleepOn){sleepOn=s.sleep;paintSleep()}
     $('warn').classList.toggle('show',!s.adb);
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
-    else if(!s.typing&&kbarOpen&&!editing)hideKbar(false);
+    else if(!s.typing&&kbarOpen&&!editing&&kmode!=='yt')hideKbar(false);
+    $('ytpill').classList.toggle('show',!!(s.fg&&s.fg.indexOf('youtube')>=0)&&!kbarOpen);
     const m=s.media;
     setText('tt',m?m.title:'Ничего не играет');
     setText('ta',m?((m.artist?m.artist+' · ':'')+'на HY300 Pro'):'На HY300 Pro');

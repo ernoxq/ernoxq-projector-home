@@ -141,6 +141,23 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
         }
     }
 
+    @Volatile private var fgPkg = ""
+    @Volatile private var fgAt = 0L
+    @Volatile private var fgBusy = false
+
+    private fun foreground(): String {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (!fgBusy && now - fgAt > 2500) {
+            fgBusy = true
+            Thread {
+                try { fgPkg = if (App.isForeground) ctx.packageName else Apps.foreground(ctx) ?: "" } finally {
+                    fgAt = android.os.SystemClock.elapsedRealtime(); fgBusy = false
+                }
+            }.start()
+        }
+        return fgPkg
+    }
+
     private fun state(): String {
         val (vol, muted) = Control.volumeState(ctx)
         val np = Media.current(ctx)
@@ -155,6 +172,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("brightness", Picture.brightness(ctx))
             .put("warmth", Picture.warmth(ctx))
             .put("sleep", SleepTimer.isOn(ctx))
+            .put("fg", foreground())
             .put("warm", Picture.isWarm(ctx))
         if (np != null) {
             o.put("media", JSONObject()

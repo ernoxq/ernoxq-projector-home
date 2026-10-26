@@ -458,7 +458,7 @@ class MainActivity : Activity() {
         val lastOff = getSharedPreferences("home", MODE_PRIVATE).getString("last_off", null)
         AlertDialog.Builder(this, R.style.Dialog)
             .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
-                "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная — нажми «Настроить автоматически»") +
+                "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная (" + (android.provider.Settings.Secure.getString(contentResolver, "default_input_method") ?: "?").substringBefore('/') + ")") +
                 (lastOff?.let { "\nПоследнее выключение: $it" } ?: "") +
                 (volUi?.let { "\nРодная громкость: $it" } ?: ""))
             .setItems(arrayOf(
@@ -466,6 +466,7 @@ class MainActivity : Activity() {
                 if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
                 if (SleepTimer.isOn(this)) "Сон после 23:00 (30 мин без нажатий): включён — выключить" else "Сон после 23:00: выключен — включить",
                 "Настройки проектора",
+                "Выбрать клавиатуру вручную",
             )) { _, i ->
                 when (i) {
                     0 -> {
@@ -484,6 +485,15 @@ class MainActivity : Activity() {
                         android.widget.Toast.makeText(this, if (on) "Сон после 23:00 включён" else "Сон выключен", android.widget.Toast.LENGTH_SHORT).show()
                     }
                     3 -> Apps.openSettings(this)
+                    4 -> {
+                        // System picker: choose "Projector Home". If it isn't listed, open the list of keyboards to switch it on.
+                        try {
+                            Thread { Adb.useOurKeyboard(applicationContext) }.start()
+                            getSystemService(android.view.inputmethod.InputMethodManager::class.java).showInputMethodPicker()
+                        } catch (_: Exception) {
+                            try { startActivity(android.content.Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS)) } catch (_: Exception) {}
+                        }
+                    }
                 }
             }
             .setPositiveButton("Настроить автоматически") { _, _ ->

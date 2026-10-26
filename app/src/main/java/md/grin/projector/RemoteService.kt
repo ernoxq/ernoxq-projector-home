@@ -30,6 +30,7 @@ class RemoteService : Service() {
         Thread { Picture.restore(applicationContext) }.start()
         SleepTimer.start(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
+        updates.postDelayed(airplayWatch, 30_000)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
     }
 
@@ -45,6 +46,34 @@ class RemoteService : Service() {
             } else {
                 updates.postDelayed(this, 10 * 60_000L) // busy: try again in 10 minutes
             }
+        }
+    }
+
+    /**
+     * Back to the home screen when AirPlay ends: while another app is on screen, look every few seconds
+     * for an open AirPlay session (a connection on the receiver's port 7000). When a session that was
+     * open closes and the receiver is still on screen, go home.
+     */
+    @Volatile private var airplaySession = false
+    private val airplayWatch = object : Runnable {
+        override fun run() {
+            if (!App.isForeground && Apps.isInstalled(applicationContext, Apps.AIRPLAY)) {
+                Thread {
+                    val ctx = applicationContext
+                    val n = Adb.run(ctx, "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk 'toupper(\$2) ~ /:1B58\$/ && \$4==\"01\"' | wc -l")
+                        ?.trim()?.toIntOrNull() ?: return@Thread
+                    if (n > 0) {
+                        airplaySession = true
+                    } else if (airplaySession) {
+                        airplaySession = false
+                        val top = Adb.run(ctx, "dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'") ?: ""
+                        if (top.contains(Apps.AIRPLAY)) updates.post { Apps.goHome(ctx) }
+                    }
+                }.start()
+            } else if (App.isForeground) {
+                airplaySession = false
+            }
+            updates.postDelayed(this, 4_000)
         }
     }
 

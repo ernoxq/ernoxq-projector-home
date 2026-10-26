@@ -33,9 +33,9 @@ object VolumeHud {
         main.post {
             val v = view ?: attach(ctx.applicationContext) ?: return@post
             v.setLevel(if (muted) 0f else percent / 100f)
-            if (!shown) slide(true)
+            if (!shown) slide(true) else bump(v)
             main.removeCallbacks(hide)
-            main.postDelayed(hide, 1700)
+            main.postDelayed(hide, 2600)
         }
     }
 
@@ -66,18 +66,32 @@ object VolumeHud {
         }
     }
 
+    // Apple-like motion: a long, soft spring on the way in, an unhurried ease on the way out.
+    private val springIn = android.view.animation.PathInterpolator(0.16f, 1.12f, 0.3f, 1f)
+    private val easeOut = android.view.animation.PathInterpolator(0.55f, 0f, 0.75f, 0.2f)
+    private val easeBump = android.view.animation.PathInterpolator(0.3f, 0f, 0.2f, 1f)
+
     private fun slide(inside: Boolean) {
         val v = view ?: return
         shown = inside
         v.animate().cancel()
         if (inside) {
-            v.scaleY = 0.86f
-            v.animate().translationX(0f).alpha(1f).scaleY(1f)
-                .setDuration(360).setInterpolator(OvershootInterpolator(1.1f)).start()
+            v.scaleY = 0.78f
+            v.scaleX = 0.9f
+            v.animate().translationX(0f).alpha(1f).scaleY(1f).scaleX(1f)
+                .setDuration(620).setInterpolator(springIn).withLayer().start()
         } else {
-            v.animate().translationX(-Ui.pxf(120)).alpha(0f).scaleY(0.9f)
-                .setDuration(280).setInterpolator(DecelerateInterpolator()).start()
+            v.animate().translationX(-Ui.pxf(120)).alpha(0f).scaleY(0.82f).scaleX(0.92f)
+                .setDuration(520).setInterpolator(easeOut).withLayer().start()
         }
+    }
+
+    /** A tiny breath when the level changes while it's already on screen. */
+    private fun bump(v: View) {
+        v.animate().cancel()
+        v.animate().translationX(0f).alpha(1f).scaleX(1.04f).scaleY(1.02f).setDuration(120).setInterpolator(easeBump)
+            .withEndAction { v.animate().scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(easeBump).start() }
+            .start()
     }
 
     private class HudView(ctx: Context) : View(ctx) {
@@ -98,8 +112,8 @@ object VolumeHud {
         fun setLevel(target: Float) {
             anim?.cancel()
             anim = ValueAnimator.ofFloat(level, target.coerceIn(0f, 1f)).apply {
-                duration = 200
-                interpolator = DecelerateInterpolator()
+                duration = 340
+                interpolator = android.view.animation.PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
                 addUpdateListener { level = it.animatedValue as Float; invalidate() }
                 start()
             }

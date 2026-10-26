@@ -77,6 +77,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
 
     private fun route(uri: Uri, out: OutputStream) {
         val q = { k: String -> uri.getQueryParameter(k) ?: "" }
+        val path = uri.path ?: "/"
+        if (path.startsWith("/api/") && path != "/api/state" && path != "/api/art") SleepTimer.touch()
         when (uri.path ?: "/") {
             "/", "/index.html" -> {
                 val html = ctx.assets.open("remote.html").use { it.readBytes() }
@@ -103,6 +105,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/submit" -> ok(out, json("ok" to (TvKeyboard.submit() || Control.key(ctx, "enter"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/brightness" -> ok(out, json("ok" to Picture.setBrightness(ctx, q("v").toIntOrNull() ?: 100)))
+            "/api/sleep" -> ok(out, json("ok" to SleepTimer.setOn(ctx, q("on") == "1")))
             "/api/warmth" -> ok(out, json("ok" to Picture.setWarmth(ctx, q("v").toIntOrNull() ?: 50)))
             "/api/warm" -> ok(out, json("ok" to Picture.setWarm(ctx, q("on") == "1"), "on" to Picture.isWarm(ctx)))
             "/api/update" -> {
@@ -141,6 +144,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("text", TvKeyboard.text)
             .put("brightness", Picture.brightness(ctx))
             .put("warmth", Picture.warmth(ctx))
+            .put("sleep", SleepTimer.isOn(ctx))
             .put("warm", Picture.isWarm(ctx))
         if (np != null) {
             o.put("media", JSONObject()

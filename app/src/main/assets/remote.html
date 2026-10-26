@@ -9,18 +9,18 @@
 <meta name="apple-mobile-web-app-title" content="Пульт">
 <meta name="theme-color" content="#000000">
 <title>Пульт</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#000;--surface:#1E1E20;--btn:#161617;--line:rgba(255,255,255,.09);--fg:#F2F2F4;--dim:#8E8E93;--accent:#FBE38E}
+:root{--bg:#000;--surface:#1E1E20;--tile:#2C2C2E;--line:rgba(255,255,255,.09);--fg:#F2F2F4;--dim:#8E8E93;--accent:#FBE38E;--orange:#FF9F0A;--indigo:#5E5CE6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:'Inter Tight',-apple-system,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;touch-action:none}
 .app{height:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 22px);gap:20px}
-button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0;cursor:pointer;transition:transform .16s cubic-bezier(.2,.8,.2,1),background .2s}
-button:active{transform:scale(.92)}
+button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0;cursor:pointer;transition:transform .16s cubic-bezier(.2,.8,.2,1),background .25s,color .25s}
+button:active{transform:scale(.93)}
 svg{display:block}
 .glass{background:linear-gradient(180deg,#262628,#1A1A1C);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px var(--line)}
 
-/* top bar */
+/* ---------- main remote ---------- */
 .top{display:flex;align-items:center;gap:12px}
 .round{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .round svg{stroke:var(--dim)}
@@ -29,8 +29,6 @@ svg{display:block}
 .device .dot{width:8px;height:8px;border-radius:4px;background:#5A5A5E;transition:background .3s}
 .device .dot.on{background:#30D158}
 .device svg{stroke:var(--dim)}
-
-/* touchpad */
 .pad{position:relative;flex:1;border-radius:44px;background:var(--surface);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
 .pad .glow{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.13),rgba(255,255,255,0) 68%);opacity:0;transform:scale(.6);transition:opacity .25s,transform .25s;pointer-events:none}
 .pad.touch .glow{opacity:1;transform:scale(1)}
@@ -45,45 +43,72 @@ svg{display:block}
 .pad .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @keyframes ring{0%{opacity:.9;transform:scale(.4)}100%{opacity:0;transform:scale(1.5)}}
 @keyframes edge{0%{opacity:1}100%{opacity:0}}
-
-/* bottom */
 .bottom{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
 .b{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .b svg{stroke:var(--dim)}
 .b.big{width:112px;height:112px;background:linear-gradient(180deg,#1B1B1D,#101011)}
 
-/* sheet */
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s}
-.scrim.show{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;background:#1C1C1E;border-radius:30px 30px 0 0;padding:10px 18px calc(env(safe-area-inset-bottom) + 20px);transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px;touch-action:pan-y}
-.sheet.show{transform:none}
-.grab{width:40px;height:5px;border-radius:3px;background:#48484A;margin:0 auto 4px}
-.sheet h3{margin:0;font-size:13px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
-.now{display:flex;align-items:center;gap:12px;background:#2A2A2C;border-radius:22px;padding:10px}
-.art{width:52px;height:52px;border-radius:14px;background:#3A3A3C center/cover no-repeat;flex-shrink:0}
-.now .t{flex:1;min-width:0}
-.now b{display:block;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.now span{display:block;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.now button{width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center}
-.now button svg{fill:var(--fg)}
-.slider{position:relative;height:50px;border-radius:25px;background:#2A2A2C;overflow:hidden;touch-action:none}
-.slider .fill{position:absolute;left:0;top:0;bottom:0;width:40%;background:var(--fg);border-radius:25px}
-.slider .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:14px;font-weight:600;pointer-events:none;mix-blend-mode:difference;color:#fff}
-.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.apps button{height:52px;border-radius:18px;background:#2A2A2C;font-size:15px;font-weight:500}
-.apps .acc{background:var(--accent);color:#121212;font-weight:600}
-.typer{display:flex;gap:8px}
-.typer input{flex:1;min-width:0;height:50px;border-radius:25px;border:none;padding:0 18px;font:500 16px 'Inter Tight',sans-serif;background:#2A2A2C;color:var(--fg);outline:none;user-select:text;-webkit-user-select:text}
-.typer input::placeholder{color:#6E6E73}
-.typer button{height:50px;padding:0 20px;border-radius:25px;background:var(--fg);color:#000;font-weight:600;font-size:15px}
-/* keyboard bar: pops up by itself when a text field is selected on the projector */
+/* ---------- keyboard bar (only when a text field is selected on the projector) ---------- */
 .kbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);max-width:436px;margin:0 auto;background:var(--accent);border-radius:28px;padding:8px;display:flex;gap:8px;align-items:center;transform:translateY(calc(100% + 120px));visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:5}
 .kbar.show{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .kbar input{flex:1;min-width:0;height:52px;border-radius:22px;border:none;padding:0 16px;font:500 17px 'Inter Tight',sans-serif;background:#fff;color:#121212;outline:none;user-select:text;-webkit-user-select:text}
 .kbar input::placeholder{color:#8A8F99}
 .kbar button{height:52px;padding:0 18px;border-radius:22px;background:#121212;color:#fff;font-weight:600;font-size:15px;white-space:nowrap}
 .kbar .x{width:44px;padding:0;background:transparent;color:#121212;display:flex;align-items:center;justify-content:center}
-.warn{display:none;background:var(--accent);color:#121212;border-radius:18px;padding:12px 14px;font-size:14px;line-height:1.35;align-items:center;gap:10px}
+
+/* ---------- control center sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;max-height:90dvh;max-height:90vh;background:rgba(28,28,30,.94);backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6);border-radius:34px 34px 0 0;transform:translateY(105%);transition:transform .42s cubic-bezier(.2,.9,.25,1);display:flex;flex-direction:column;box-shadow:0 -1px 0 rgba(255,255,255,.08)}
+.sheet.show{transform:none}
+.sheet.drag{transition:none}
+.shead{padding:10px 18px 6px;touch-action:none;flex-shrink:0}
+.grab{width:40px;height:5px;border-radius:3px;background:#5A5A5E;margin:0 auto 12px}
+.shead .row{display:flex;align-items:center;justify-content:space-between}
+.shead h2{margin:0;font-size:24px;font-weight:700;letter-spacing:-.4px}
+.close{width:34px;height:34px;border-radius:17px;background:#3A3A3C;display:flex;align-items:center;justify-content:center}
+.sbody{overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:8px 18px calc(env(safe-area-inset-bottom) + 24px);display:flex;flex-direction:column;gap:12px}
+.card{background:var(--tile);border-radius:26px}
+.cap{font-size:12px;font-weight:600;color:var(--dim);text-align:center;margin-top:7px}
+
+.now{display:flex;align-items:center;gap:12px;padding:10px}
+.art{width:52px;height:52px;border-radius:14px;background:#3A3A3C center/cover no-repeat;flex-shrink:0}
+.now .t{flex:1;min-width:0}
+.now b{display:block;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now span{display:block;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.now button{width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center}
+.now button svg{fill:var(--fg)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vs{position:relative;height:178px;border-radius:30px;background:var(--tile);overflow:hidden;touch-action:none}
+.vs .fill{position:absolute;left:0;right:0;bottom:0;height:40%;background:#F5F5F7;transition:height .12s}
+.vs svg{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);stroke:#1C1C1E;mix-blend-mode:normal}
+.vs .pct{position:absolute;left:0;right:0;top:14px;text-align:center;font-size:15px;font-weight:600;color:var(--fg);mix-blend-mode:difference}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tg{display:flex;flex-direction:column;align-items:center}
+.tg button{width:100%;aspect-ratio:1;border-radius:26px;background:var(--tile);display:flex;align-items:center;justify-content:center}
+.tg button svg{stroke:var(--fg)}
+.tg.on.ns button{background:var(--orange)}
+.tg.on.sl button{background:var(--indigo)}
+.tg.cast button{background:#F5F5F7}.tg.cast button svg{stroke:#1C1C1E}
+
+.warm{padding:14px 16px;display:none}
+.warm.show{display:block}
+.warm .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px}
+.hs{position:relative;height:34px;border-radius:17px;background:linear-gradient(90deg,#FFD9B0,#FF8A2A);touch-action:none}
+.hs .knob{position:absolute;top:2px;width:30px;height:30px;margin-left:-15px;border-radius:15px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.35);left:50%}
+
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.app-b{display:flex;flex-direction:column;align-items:center}
+.app-b button{width:100%;height:64px;border-radius:22px;background:var(--tile);display:flex;align-items:center;justify-content:center}
+.app-b button svg{stroke:var(--fg)}
+
+.typer{display:flex;gap:8px}
+.typer input{flex:1;min-width:0;height:50px;border-radius:25px;border:none;padding:0 18px;font:500 16px 'Inter Tight',sans-serif;background:var(--tile);color:var(--fg);outline:none;user-select:text;-webkit-user-select:text}
+.typer input::placeholder{color:#6E6E73}
+.typer button{height:50px;padding:0 20px;border-radius:25px;background:var(--fg);color:#000;font-weight:600;font-size:15px}
+.warn{display:none;background:var(--accent);color:#121212;border-radius:20px;padding:12px 14px;font-size:14px;line-height:1.35;align-items:center;gap:10px}
 .warn.show{display:flex}
 .warn button{height:36px;padding:0 14px;border-radius:18px;background:#121212;color:#fff;font-weight:600;font-size:14px;white-space:nowrap}
 </style>
@@ -94,7 +119,7 @@ svg{display:block}
     <button class="round glass" id="mute" aria-label="Без звука" onclick="vol('mute')">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h3.5L12 5v14l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
     </button>
-    <button class="device glass" aria-label="Приложения и звук" onclick="openSheet()">
+    <button class="device glass" aria-label="Пункт управления" onclick="openSheet()">
       <span class="dot" id="dot"></span><span id="st">Проектор</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
     </button>
@@ -131,36 +156,69 @@ svg{display:block}
 </div>
 
 <div class="scrim" id="scrim" onclick="closeSheet()"></div>
-<div class="sheet" id="sheet">
-  <div class="grab"></div>
-  <div class="warn" id="warn"><div>Тачпад ещё не подключён. Нажми и выбери на проекторе <b>Allow</b>.</div><button onclick="api('/api/setup')">Настроить</button></div>
-  <div class="now">
-    <div class="art" id="art"></div>
-    <div class="t"><b id="tt">Ничего не играет</b><span id="ta">Включи музыку</span></div>
-    <button aria-label="Предыдущий" onclick="media('prev')"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 5h2.5v14H6zM20 5v14L9.5 12z"/></svg></button>
-    <button aria-label="Пауза" onclick="media('play')"><svg id="pp" width="18" height="18" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-    <button aria-label="Следующий" onclick="media('next')"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M15.5 5H18v14h-2.5zM4 5v14l10.5-7z"/></svg></button>
+<div class="sheet" id="sheet" role="dialog" aria-label="Пункт управления">
+  <div class="shead" id="shead">
+    <div class="grab"></div>
+    <div class="row">
+      <h2>Проектор</h2>
+      <button class="close" aria-label="Закрыть" onclick="closeSheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D1D1D6" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
   </div>
-  <h3>Громкость</h3>
-  <div class="slider" id="slider"><div class="fill" id="fill"></div><div class="lbl"><span>Звук</span><span id="vl">—</span></div></div>
-  <h3>Текст на экран</h3>
-  <div class="typer"><input id="tx" placeholder="Текст или адрес сайта" autocomplete="off" autocapitalize="off" enterkeyhint="send"><button onclick="sendText()">Ввести</button></div>
-  <h3>Открыть</h3>
-  <div class="apps">
-    <button onclick="go('youtube')">YouTube</button>
-    <button onclick="go('netflix')">Netflix</button>
-    <button onclick="go('spotify')">Spotify</button>
-    <button onclick="go('browser')">Браузер</button>
-    <button onclick="go('hdmi')">HDMI</button>
-    <button class="acc" onclick="go('cast')">Трансляция</button>
+  <div class="sbody">
+    <div class="warn" id="warn"><div>Управление ещё не подключено. Нажми и выбери на проекторе <b>Allow</b>.</div><button onclick="api('/api/setup')">Настроить</button></div>
+
+    <div class="card now">
+      <div class="art" id="art"></div>
+      <div class="t"><b id="tt">Ничего не играет</b><span id="ta">Включи музыку</span></div>
+      <button aria-label="Предыдущий" onclick="media('prev')"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 5h2.5v14H6zM20 5v14L9.5 12z"/></svg></button>
+      <button aria-label="Пауза" onclick="media('play')"><svg id="pp" width="18" height="18" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+      <button aria-label="Следующий" onclick="media('next')"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M15.5 5H18v14h-2.5zM4 5v14l10.5-7z"/></svg></button>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="vs" id="vvol" aria-label="Громкость"><div class="fill" id="vvolf"></div><div class="pct" id="vvolp">—</div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h3.5L12 5v14l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></div>
+        <div class="cap">Звук</div>
+      </div>
+      <div>
+        <div class="vs" id="vbr" aria-label="Яркость"><div class="fill" id="vbrf"></div><div class="pct" id="vbrp">—</div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></div>
+        <div class="cap">Яркость</div>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="tg ns" id="tgns">
+        <button aria-label="Night Shift" onclick="toggleWarm()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v1.8M12 19.4v1.8M2.8 12h1.8M19.4 12h1.8"/><path d="M5.6 5.6l1.2 1.2M17.2 17.2l1.2 1.2M5.6 18.4l1.2-1.2M17.2 6.8l1.2-1.2" opacity=".55"/></svg></button>
+        <div class="cap">Night Shift</div>
+      </div>
+      <div class="tg sl" id="tgsl">
+        <button aria-label="Сон после 23:00" onclick="toggleSleep()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+        <div class="cap">Сон после 23:00</div>
+      </div>
+      <div class="tg cast">
+        <button aria-label="Трансляция" onclick="go('cast')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a1.5 1.5 0 0 1-1.5-1.5v-10A1.5 1.5 0 0 1 4 4h16a1.5 1.5 0 0 1 1.5 1.5v10A1.5 1.5 0 0 1 20 17h-1"/><path d="M12 14l5 6H7z"/></svg></button>
+        <div class="cap">Трансляция</div>
+      </div>
+    </div>
+
+    <div class="card warm" id="warmcard">
+      <div class="lbl"><span>Менее тёплый</span><span>Более тёплый</span></div>
+      <div class="hs" id="hs"><div class="knob" id="knob"></div></div>
+    </div>
+
+    <div class="apps">
+      <div class="app-b"><button aria-label="YouTube" onclick="go('youtube')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="3.5"/><path d="M10 8.8v6.4l5.3-3.2z" fill="#F2F2F4" stroke="none"/></svg></button><div class="cap">YouTube</div></div>
+      <div class="app-b"><button aria-label="Netflix" onclick="go('netflix')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M7.5 3.5v17M16.5 3.5v17M3.5 8h4M3.5 12h4M3.5 16h4M16.5 8h4M16.5 12h4M16.5 16h4"/></svg></button><div class="cap">Netflix</div></div>
+      <div class="app-b"><button aria-label="Spotify" onclick="go('spotify')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button><div class="cap">Spotify</div></div>
+      <div class="app-b"><button aria-label="Браузер" onclick="go('browser')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button><div class="cap">Браузер</div></div>
+      <div class="app-b"><button aria-label="HDMI" onclick="go('hdmi')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linejoin="round"><path d="M3 8h18v5l-3 3H6l-3-3z"/></svg></button><div class="cap">HDMI</div></div>
+      <div class="app-b"><button aria-label="Все приложения" onclick="go('apps')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg></button><div class="cap">Все</div></div>
+    </div>
+
+    <div class="typer"><input id="tx" placeholder="Текст или адрес сайта" autocomplete="off" autocapitalize="off" enterkeyhint="send"><button onclick="sendText()">Ввести</button></div>
   </div>
-  <h3>Яркость</h3>
-  <div class="slider" id="bslider"><div class="fill" id="bfill"></div><div class="lbl"><span>☀︎</span><span id="bl">100%</span></div></div>
-  <h3>Night Shift</h3>
-  <div class="apps" style="grid-template-columns:1fr">
-    <button id="warm" onclick="toggleWarm()">Night Shift: выкл</button>
-  </div>
-  <div class="slider" id="wslider" style="display:none"><div class="fill" id="wfill" style="background:#FFB067"></div><div class="lbl"><span>Менее тёплый</span><span>Более тёплый</span></div></div>
 </div>
 
 <script>
@@ -170,17 +228,26 @@ const key=k=>api('/api/key?k='+k);
 const media=c=>api('/api/media?c='+c).then(()=>setTimeout(refresh,300));
 const vol=d=>api('/api/vol?d='+d).then(refresh);
 function go(a){api('/api/launch?app='+a);closeSheet()}
-function openSheet(){$('sheet').classList.add('show');$('scrim').classList.add('show');refresh()}
-function closeSheet(){$('sheet').classList.remove('show');$('scrim').classList.remove('show');$('tx').blur()}
+
+/* ---------- control center: open, close with ✕, tap outside or swipe down ---------- */
+const sheet=$('sheet'),scrim=$('scrim');
+function openSheet(){sheet.style.transform='';sheet.classList.add('show');scrim.classList.add('show');refresh()}
+function closeSheet(){sheet.style.transform='';sheet.classList.remove('show');scrim.classList.remove('show');$('tx').blur()}
+(function(){
+  const h=$('shead');let y0=null,dy=0;
+  h.addEventListener('pointerdown',e=>{if(e.target.closest('.close'))return;h.setPointerCapture(e.pointerId);y0=e.clientY;dy=0;sheet.classList.add('drag')});
+  h.addEventListener('pointermove',e=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);sheet.style.transform='translateY('+dy+'px)'});
+  const end=()=>{if(y0===null)return;y0=null;sheet.classList.remove('drag');if(dy>90)closeSheet();else sheet.style.transform=''};
+  h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+})();
 
 /* ---------- touchpad gestures ---------- */
 const pad=$('pad'),glow=$('glow');
 const STEP=46;
-let pts=new Map(),sx=0,sy=0,ox=0,oy=0,t0=0,axis=null,moved=false,two=false,vy=0,longT=null;
-let toastT=null;
+let pts=new Map(),sx=0,sy=0,ox=0,oy=0,t0=0,axis=null,moved=false,two=false,vy=0,longT=null,toastT=null;
 function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),700)}
 function pulse(el){el.classList.remove('go');void el.offsetWidth;el.classList.add('go')}
-function step(dir){key(dir);pulse(pad.querySelector('.edge.'+dir));$('hint').style.opacity=0;if(navigator.vibrate)navigator.vibrate(6)}
+function step(dir){key(dir);pulse(pad.querySelector('.edge.'+dir));$('hint').style.opacity=0}
 function pos(e){const r=pad.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 pad.addEventListener('pointerdown',e=>{
   pad.setPointerCapture(e.pointerId);pts.set(e.pointerId,e);
@@ -209,21 +276,38 @@ function up(e){
   if(!pts.has(e.pointerId))return;pts.delete(e.pointerId);
   if(pts.size>0)return;
   clearTimeout(longT);pad.classList.remove('touch');
-  if(!two&&!moved&&!axis&&Date.now()-t0<400){
-    key('ok');const r=$('ring');const [x,y]=pos(e);r.style.left=x+'px';r.style.top=y+'px';pulse(r);$('hint').style.opacity=0;if(navigator.vibrate)navigator.vibrate(10)
-  }
+  if(!two&&!moved&&!axis&&Date.now()-t0<400){key('ok');const r=$('ring');const [x,y]=pos(e);r.style.left=x+'px';r.style.top=y+'px';pulse(r);$('hint').style.opacity=0}
   two=false;
 }
 pad.addEventListener('pointerup',up);pad.addEventListener('pointercancel',up);
 
-/* ---------- volume slider in the sheet ---------- */
-const slider=$('slider');let dragging=false,sendT=null;
-function setFill(p){$('fill').style.width=Math.max(p,8)+'%';$('vl').textContent=p+'%'}
-function fromEvent(e){const r=slider.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*100)}
-function sendVol(p){clearTimeout(sendT);sendT=setTimeout(()=>api('/api/vol?set='+p),60)}
-slider.addEventListener('pointerdown',e=>{slider.setPointerCapture(e.pointerId);dragging=true;const p=fromEvent(e);setFill(p);sendVol(p)});
-slider.addEventListener('pointermove',e=>{if(!dragging)return;const p=fromEvent(e);setFill(p);sendVol(p)});
-['pointerup','pointercancel'].forEach(ev=>slider.addEventListener(ev,()=>{dragging=false;setTimeout(refresh,400)}));
+/* ---------- vertical sliders (sound, brightness) and the warmth slider ---------- */
+function vSlider(el,fill,pct,onValue,min){
+  let on=false,t=null;
+  const val=e=>{const r=el.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(r.bottom-e.clientY)/r.height))*100)};
+  const show=v=>{fill.style.height=v+'%';pct.textContent=v+'%'};
+  const set=v=>{v=Math.max(min,v);show(v);clearTimeout(t);t=setTimeout(()=>onValue(v),60)};
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);on=true;el.dataset.drag=1;set(val(e))});
+  el.addEventListener('pointermove',e=>{if(on)set(val(e))});
+  ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{on=false;setTimeout(()=>{delete el.dataset.drag},600)}));
+  return show;
+}
+const showVol=vSlider($('vvol'),$('vvolf'),$('vvolp'),v=>api('/api/vol?set='+v),0);
+const showBr=vSlider($('vbr'),$('vbrf'),$('vbrp'),v=>api('/api/brightness?v='+v),5);
+(function(){
+  const el=$('hs'),k=$('knob');let on=false,t=null;
+  const val=e=>{const r=el.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*100)};
+  const set=v=>{k.style.left=(6+v*0.88)+'%';clearTimeout(t);t=setTimeout(()=>api('/api/warmth?v='+v),60)};
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);on=true;el.dataset.drag=1;set(val(e))});
+  el.addEventListener('pointermove',e=>{if(on)set(val(e))});
+  ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{on=false;setTimeout(()=>{delete el.dataset.drag},600)}));
+})();
+
+let warmOn=false,sleepOn=true;
+function paintWarm(){$('tgns').classList.toggle('on',warmOn);$('warmcard').classList.toggle('show',warmOn)}
+function paintSleep(){$('tgsl').classList.toggle('on',sleepOn)}
+function toggleWarm(){warmOn=!warmOn;paintWarm();api('/api/warm?on='+(warmOn?1:0))}
+function toggleSleep(){sleepOn=!sleepOn;paintSleep();api('/api/sleep?on='+(sleepOn?1:0))}
 
 function sendText(){const i=$('tx');if(!i.value)return;api('/api/text?t='+encodeURIComponent(i.value));i.value=''}
 $('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendText();setTimeout(()=>key('enter'),250)}});
@@ -231,33 +315,14 @@ $('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();se
 /* ---------- keyboard bar ---------- */
 const kbar=$('kbar'),kin=$('kin');
 let kbarOpen=false,dismissedAt=0,liveT=null,editing=false;
-function showKbar(text){
-  if(kbarOpen)return;kbarOpen=true;
-  if(!editing)kin.value=text||'';
-  kbar.classList.add('show');
-  try{kin.focus()}catch(e){}           // iOS may still need one tap to raise the keyboard
-}
+function showKbar(text){if(kbarOpen)return;kbarOpen=true;if(!editing)kin.value=text||'';kbar.classList.add('show');try{kin.focus()}catch(e){}}
 function hideKbar(byUser){kbarOpen=false;editing=false;kbar.classList.remove('show');kin.blur();if(byUser)dismissedAt=Date.now()}
 kin.addEventListener('focus',()=>{editing=true});
 kin.addEventListener('input',()=>{clearTimeout(liveT);liveT=setTimeout(()=>api('/api/settext?t='+encodeURIComponent(kin.value)),120)});
 function submitKbar(){clearTimeout(liveT);api('/api/settext?t='+encodeURIComponent(kin.value)).then(()=>setTimeout(()=>api('/api/submit'),150));hideKbar(true)}
 kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitKbar()}});
 
-/* brightness and warmth sliders: drag to set, sent smoothly while dragging */
-function dragSlider(el,fillEl,onValue,min){
-  let on=false,t=null;
-  const val=e=>{const r=el.getBoundingClientRect();return Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*100)};
-  const set=v=>{v=Math.max(min,v);fillEl.style.width=Math.max(v,8)+'%';clearTimeout(t);t=setTimeout(()=>onValue(v),70);return v};
-  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);on=true;el.dataset.drag=1;set(val(e))});
-  el.addEventListener('pointermove',e=>{if(on)set(val(e))});
-  ['pointerup','pointercancel'].forEach(ev=>el.addEventListener(ev,()=>{on=false;setTimeout(()=>{delete el.dataset.drag},500)}));
-}
-dragSlider($('bslider'),$('bfill'),v=>{$('bl').textContent=v+'%';api('/api/brightness?v='+v)},5);
-dragSlider($('wslider'),$('wfill'),v=>api('/api/warmth?v='+v),0);
-let warmOn=false;
-function toggleWarm(){api('/api/warm?on='+(warmOn?0:1)).then(s=>{if(s&&s.ok){warmOn=s.on;paintWarm()}})}
-function paintWarm(){const b=$('warm');b.textContent='Night Shift: '+(warmOn?'вкл':'выкл');b.classList.toggle('acc',warmOn);$('wslider').style.display=warmOn?'block':'none'}
-
+/* ---------- live state ---------- */
 let lastArt='';
 function refresh(){
   api('/api/state').then(s=>{
@@ -266,11 +331,12 @@ function refresh(){
     $('st').textContent=on?'Проектор':'Нет связи';
     if(!on)return;
     $('mute').classList.toggle('on',!!s.muted);
-    if(!dragging)setFill(s.volume);
-    $('warn').classList.toggle('show',!s.adb);
-    if(s.brightness!==undefined&&!$('bslider').dataset.drag){$('bfill').style.width=Math.max(s.brightness,8)+'%';$('bl').textContent=s.brightness+'%'}
-    if(s.warmth!==undefined&&!$('wslider').dataset.drag)$('wfill').style.width=Math.max(s.warmth,8)+'%';
+    if(!$('vvol').dataset.drag)showVol(s.muted?0:s.volume);
+    if(s.brightness!==undefined&&!$('vbr').dataset.drag)showBr(s.brightness);
+    if(s.warmth!==undefined&&!$('hs').dataset.drag)$('knob').style.left=(6+s.warmth*0.88)+'%';
     if(s.warm!==undefined&&s.warm!==warmOn){warmOn=s.warm;paintWarm()}
+    if(s.sleep!==undefined&&s.sleep!==sleepOn){sleepOn=s.sleep;paintSleep()}
+    $('warn').classList.toggle('show',!s.adb);
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
     else if(!s.typing&&kbarOpen&&!editing)hideKbar(false);
     const m=s.media;
@@ -281,7 +347,7 @@ function refresh(){
     if(k!==lastArt){lastArt=k;$('art').style.backgroundImage=k?'url(/api/art?'+Date.now()+')':'none'}
   });
 }
-refresh();setInterval(()=>{if(!document.hidden)refresh()},1500);
+paintSleep();refresh();setInterval(()=>{if(!document.hidden)refresh()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 </script>
 </body>

@@ -28,6 +28,7 @@ class RemoteService : Service() {
         Media.attach(applicationContext)
         updates.postDelayed(updateCheck, 60_000)
         Thread { Picture.restore(applicationContext) }.start()
+        SleepTimer.start(applicationContext)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
     }
 

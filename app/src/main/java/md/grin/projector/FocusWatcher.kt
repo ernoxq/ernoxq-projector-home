@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityEvent
  */
 class FocusWatcher : AccessibilityService() {
     override fun onKeyEvent(event: KeyEvent): Boolean {
+        SleepTimer.touch()
         val dir = when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> "up"
             KeyEvent.KEYCODE_VOLUME_DOWN -> "down"

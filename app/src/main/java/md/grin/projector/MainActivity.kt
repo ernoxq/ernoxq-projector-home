@@ -438,6 +438,7 @@ class MainActivity : Activity() {
             .setItems(arrayOf(
                 "Яркость: $level% — изменить (плавно — ползунком на айфоне)",
                 if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
+                if (SleepTimer.isOn(this)) "Сон после 23:00 (30 мин без нажатий): включён — выключить" else "Сон после 23:00: выключен — включить",
                 "Настройки проектора",
             )) { _, i ->
                 when (i) {
@@ -451,7 +452,12 @@ class MainActivity : Activity() {
                         val ok = Picture.setWarm(applicationContext, !warm)
                         main.post { android.widget.Toast.makeText(this, if (ok) (if (!warm) "Night Shift включён" else "Night Shift выключен") else "Нужно разрешение на показ поверх окон: «Настроить автоматически»", android.widget.Toast.LENGTH_SHORT).show() }
                     }.start()
-                    2 -> Apps.openSettings(this)
+                    2 -> {
+                        val on = !SleepTimer.isOn(this)
+                        SleepTimer.setOn(this, on)
+                        android.widget.Toast.makeText(this, if (on) "Сон после 23:00 включён" else "Сон выключен", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    3 -> Apps.openSettings(this)
                 }
             }
             .setPositiveButton("Настроить автоматически") { _, _ ->

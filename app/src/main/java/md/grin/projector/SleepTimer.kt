@@ -22,8 +22,9 @@ object SleepTimer {
 
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var lastActivity = SystemClock.elapsedRealtime()
-    @Volatile private var warnedAt = 0L
-    private var notice: View? = null
+    /** When the projector will switch off (elapsedRealtime), or 0 if nothing is scheduled. */
+    @Volatile private var offAt = 0L
+    private var notice: TextView? = null
     private var appCtx: Context? = null
 
     fun isOn(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("sleep", true)
@@ -34,13 +35,25 @@ object SleepTimer {
         return true
     }
 
-    /** Someone used a remote: restart the 30-minute countdown and cancel any warning. */
+    /** Someone used a remote: restart the 30-minute countdown and cancel a pending switch-off. */
     fun touch() {
         lastActivity = SystemClock.elapsedRealtime()
-        if (warnedAt != 0L) {
-            warnedAt = 0L
+        if (offAt != 0L) {
+            offAt = 0L
             main.post { hideNotice() }
         }
+    }
+
+    /** Try it out: switch off in [seconds] with the same on-screen countdown. */
+    fun test(ctx: Context, seconds: Int = 40): Boolean {
+        appCtx = ctx.applicationContext
+        main.post {
+            offAt = SystemClock.elapsedRealtime() + seconds * 1000L
+            showNotice(ctx.applicationContext)
+            main.removeCallbacks(check)
+            main.post(check)
+        }
+        return true
     }
 
     fun start(ctx: Context) {
@@ -58,28 +71,32 @@ object SleepTimer {
         override fun run() {
             val ctx = appCtx ?: return
             val now = SystemClock.elapsedRealtime()
-            if (!isOn(ctx) || !lateNight()) {
-                touch()
-            } else if (warnedAt == 0L && now - lastActivity >= IDLE_MS - WARN_MS) {
-                warnedAt = now
+            if (offAt != 0L) {
+                val left = ((offAt - now + 999) / 1000).toInt()
+                if (left <= 0) {
+                    offAt = 0L
+                    hideNotice()
+                    lastActivity = now
+                    Thread { Adb.key(ctx, android.view.KeyEvent.KEYCODE_POWER) }.start()
+                } else {
+                    notice?.text = message(left)
+                }
+            } else if (isOn(ctx) && lateNight() && now - lastActivity >= IDLE_MS - WARN_MS) {
+                offAt = now + WARN_MS
                 showNotice(ctx)
-            } else if (warnedAt != 0L && now - warnedAt >= WARN_MS) {
-                warnedAt = 0L
-                hideNotice()
-                lastActivity = now
-                Thread { Adb.key(ctx, android.view.KeyEvent.KEYCODE_POWER) }.start()
             }
-            main.postDelayed(this, if (warnedAt != 0L) 5_000 else 30_000)
+            main.postDelayed(this, if (offAt != 0L) 1_000 else 30_000)
         }
     }
+
+    private fun message(seconds: Int) = "Проектор выключится через $seconds с — нажми любую кнопку, чтобы продолжить"
 
     private fun showNotice(ctx: Context) {
         if (notice != null || !Settings.canDrawOverlays(ctx)) return
         Ui.init(ctx)
         val v = TextView(ctx).apply {
-            text = "Проектор выключится через минуту — нажми любую кнопку, чтобы продолжить"
+            text = message(((offAt - SystemClock.elapsedRealtime() + 999) / 1000).toInt().coerceAtLeast(1))
             setTextColor(0xFFF5F5F7.toInt())
-            textSize = 0f
             setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.pxf(22))
             typeface = Ui.font(ctx, 600)
             gravity = Gravity.CENTER
@@ -107,7 +124,7 @@ object SleepTimer {
     }
 
     private fun hideNotice() {
-        val v = notice ?: return
+        val v: View = notice ?: return
         notice = null
         val ctx = appCtx ?: return
         v.animate().alpha(0f).translationY(-Ui.pxf(40)).setDuration(400).withEndAction {

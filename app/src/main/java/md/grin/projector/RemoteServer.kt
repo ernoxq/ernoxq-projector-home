@@ -106,6 +106,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/brightness" -> ok(out, json("ok" to Picture.setBrightness(ctx, q("v").toIntOrNull() ?: 100)))
             "/api/sleep" -> ok(out, json("ok" to SleepTimer.setOn(ctx, q("on") == "1")))
+            "/api/sleeptest" -> ok(out, json("ok" to SleepTimer.test(ctx, 40)))
             "/api/warmth" -> ok(out, json("ok" to Picture.setWarmth(ctx, q("v").toIntOrNull() ?: 50)))
             "/api/warm" -> ok(out, json("ok" to Picture.setWarm(ctx, q("on") == "1"), "on" to Picture.isWarm(ctx)))
             "/api/update" -> {

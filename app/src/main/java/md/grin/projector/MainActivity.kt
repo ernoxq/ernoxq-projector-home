@@ -272,12 +272,8 @@ class MainActivity : Activity() {
                 setOnLongClickListener { pickApp(spec); true }
             }
             val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
-            val appIcon = entry?.let { Apps.icon(this, it) }
-            if (appIcon != null && !spec.dark) {
-                iconBox.addView(ImageView(this).apply { setImageDrawable(appIcon) }, FrameLayout.LayoutParams(px(44), px(44), Gravity.CENTER))
-            } else {
-                iconBox.addView(Ui.icon(this, spec.fallbackIcon, 28, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(28), px(28), Gravity.CENTER))
-            }
+            // Our own icons in the home screen's style (the apps' own icons look out of place here).
+            iconBox.addView(Ui.icon(this, spec.fallbackIcon, 30, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
             tile.addView(iconBox, Ui.lp(px(60), px(60)))
             tile.addView(Ui.flex(this))
             tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Ui.INVERSE else Ui.INK).apply { letterSpacing = -0.015f })

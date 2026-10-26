@@ -24,8 +24,8 @@ object Apps {
     const val AIRPLAY = "io.github.jqssun.airplay"
 
     val tiles = listOf(
-        TileSpec("youtube", "YouTube", "Видео", listOf("com.google.android.youtube.tv", "com.google.android.youtube", "com.liskovsoft.smarttubetv.beta", "com.teamsmart.videomanager.tv"), listOf("youtube")),
-        TileSpec("netflix", "Netflix", "Фильмы и сериалы", listOf("com.netflix.ninja", "com.netflix.mediaclient"), listOf("netflix")),
+        TileSpec("youtube", "YouTube", "Видео", listOf("com.google.android.youtube.tv", "com.google.android.youtube", "com.liskovsoft.smarttubetv.beta", "com.teamsmart.videomanager.tv"), listOf("youtube"), fallbackIcon = R.drawable.ic_video),
+        TileSpec("netflix", "Netflix", "Фильмы и сериалы", listOf("com.netflix.ninja", "com.netflix.mediaclient"), listOf("netflix"), fallbackIcon = R.drawable.ic_film),
         TileSpec("spotify", "Spotify", "Музыка", listOf("com.spotify.tv.android", "com.spotify.music"), listOf("spotify"), fallbackIcon = R.drawable.ic_music),
         TileSpec("cast", "Трансляция", "iPhone и Mac", listOf(AIRPLAY, "com.ionitech.airscreen"), listOf("airplay", "airscreen", "mirror", "cast"), dark = true, fallbackIcon = R.drawable.ic_cast),
         TileSpec("hdmi", "HDMI", "Внешний вход", emptyList(), listOf("hdmi", "source", "signal", "input", "tvinput"), fallbackIcon = R.drawable.ic_hdmi),

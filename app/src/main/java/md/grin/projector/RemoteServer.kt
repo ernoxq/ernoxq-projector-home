@@ -84,6 +84,10 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 val html = ctx.assets.open("remote.html").use { it.readBytes() }
                 send(out, 200, "text/html; charset=utf-8", html)
             }
+            "/icon.png", "/icon-512.png", "/apple-touch-icon.png" -> {
+                val name = if (uri.path == "/icon-512.png") "icon-512.png" else "icon.png"
+                send(out, 200, "image/png", ctx.assets.open(name).use { it.readBytes() })
+            }
             "/api/state" -> ok(out, state())
             "/api/key" -> ok(out, json("ok" to Control.key(ctx, q("k"))))
             "/api/vol" -> {

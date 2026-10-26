@@ -456,10 +456,12 @@ class MainActivity : Activity() {
         val volUi = getSharedPreferences("home", MODE_PRIVATE).getString("volume_ui", null)
         val kbOk = TvKeyboard.isDefault(this)
         val lastOff = getSharedPreferences("home", MODE_PRIVATE).getString("last_off", null)
+        val lastCrash = getSharedPreferences("home", MODE_PRIVATE).getString("last_crash", null)
         AlertDialog.Builder(this, R.style.Dialog)
             .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
                 "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная (" + (android.provider.Settings.Secure.getString(contentResolver, "default_input_method") ?: "?").substringBefore('/') + ")") +
                 (lastOff?.let { "\nПоследнее выключение: $it" } ?: "") +
+                (lastCrash?.let { "\nОшибка: $it" } ?: "") +
                 (volUi?.let { "\nРодная громкость: $it" } ?: ""))
             .setItems(arrayOf(
                 "Яркость: $level% — изменить (плавно — ползунком на айфоне)",

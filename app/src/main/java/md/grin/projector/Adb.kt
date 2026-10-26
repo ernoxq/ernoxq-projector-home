@@ -105,7 +105,7 @@ object Adb {
         val id = "${ctx.packageName}/.TvKeyboard"
         shell(ctx, "ime enable $id")
         shell(ctx, "ime set $id")
-        shell(ctx, "settings put secure default_input_method ${ctx.packageName}/${ctx.packageName}.TvKeyboard")
+        if (!TvKeyboard.isDefault(ctx)) shell(ctx, "settings put secure default_input_method $id")
         return TvKeyboard.isDefault(ctx)
     }
 

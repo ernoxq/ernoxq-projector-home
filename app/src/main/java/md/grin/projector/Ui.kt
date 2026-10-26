@@ -67,7 +67,22 @@ object Ui {
     var scale = 1f
     private val FOCUS_EASE = DecelerateInterpolator(1.6f)
 
+    private var crashHook = false
+
     fun init(ctx: Context) {
+        if (!crashHook) {
+            crashHook = true
+            val app = ctx.applicationContext
+            val prev = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { t, e ->
+                try {
+                    val where = e.stackTrace.firstOrNull { it.className.startsWith("md.grin") }?.let { "${it.fileName}:${it.lineNumber}" } ?: ""
+                    app.getSharedPreferences("home", Context.MODE_PRIVATE).edit()
+                        .putString("last_crash", "${e.javaClass.simpleName}: ${e.message?.take(80)} $where").commit()
+                } catch (_: Throwable) {}
+                prev?.uncaughtException(t, e)
+            }
+        }
         val dm = ctx.resources.displayMetrics
         scale = maxOf(dm.widthPixels, dm.heightPixels) / 1280f
     }

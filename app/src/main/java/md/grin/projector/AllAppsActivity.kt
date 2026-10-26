@@ -19,12 +19,13 @@ class AllAppsActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Sounds.init(this)
+        Ui.applyTheme(Ui.isNightNow())
         val apps = Apps.all(this)
         val root = Ui.col(this).apply {
             setBackgroundColor(Ui.GROUND)
             setPadding(px(56), px(40), px(56), 0)
         }
-        root.addView(Ui.text(this, "Все приложения", 44, 600).apply { letterSpacing = -0.03f })
+        root.addView(Ui.text(this, "Все приложения", 44, 600, Ui.INK).apply { letterSpacing = -0.03f })
         val grid = GridView(this).apply {
             numColumns = 6
             horizontalSpacing = px(16)

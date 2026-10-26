@@ -15,7 +15,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import md.grin.projector.Ui.INK
 import md.grin.projector.Ui.MATCH
 import md.grin.projector.Ui.WRAP
 import md.grin.projector.Ui.px
@@ -46,6 +45,7 @@ class MainActivity : Activity() {
     private val mediaChanged: () -> Unit = { renderMedia() }
     private val tick = object : Runnable {
         override fun run() {
+            if (Ui.isNightNow() != Ui.night) switchTheme()
             renderClock()
             updateProgress()
             main.postDelayed(this, 1000)
@@ -67,6 +67,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Sounds.init(this)
+        Ui.applyTheme(Ui.isNightNow())
         setContentView(build())
         // The root view paints the background itself; drop the window's copy to avoid drawing the screen twice.
         window.setBackgroundDrawable(null)
@@ -160,7 +161,7 @@ class MainActivity : Activity() {
         }
         clock = Ui.text(this, "", 26, 600).apply { letterSpacing = -0.03f }
         pill.addView(clock)
-        pill.addView(View(this).apply { setBackgroundColor(0x2E121212) }, Ui.lp(px(1), px(22)).apply { leftMargin = px(16); rightMargin = px(16) })
+        pill.addView(View(this).apply { setBackgroundColor(Ui.DIVIDER) }, Ui.lp(px(1), px(22)).apply { leftMargin = px(16); rightMargin = px(16) })
         date = Ui.text(this, "", 17, 500)
         pill.addView(date)
         val w = Ui.row(this).apply {
@@ -192,7 +193,7 @@ class MainActivity : Activity() {
         val chipDefs = listOf("Все" to "apps", "Видео" to "youtube", "Музыка" to "spotify", "Трансляция" to "cast")
         chipDefs.forEachIndexed { i, (label, key) ->
             val dark = i == 0
-            val c = Ui.pill(this, label, if (dark) INK else Ui.GLASS, if (dark) Color.WHITE else INK)
+            val c = Ui.pill(this, label, if (dark) Ui.INK else Ui.GLASS, if (dark) Ui.INVERSE else Ui.INK)
             c.setOnClickListener { Apps.launchKey(this, key) }
             chips.addView(c, Ui.lp(WRAP, px(48)).apply { rightMargin = px(10) })
         }
@@ -223,8 +224,8 @@ class MainActivity : Activity() {
         card.addView(art, Ui.lp(px(172), px(172)))
 
         val info = Ui.col(this)
-        trackSource = Ui.text(this, "Сейчас играет", 13, 500, 0xFF3F4552.toInt()).apply {
-            background = Ui.round(Color.WHITE, 13, 1, Ui.LINE)
+        trackSource = Ui.text(this, "Сейчас играет", 13, 500, Ui.CHIP).apply {
+            background = Ui.round(Ui.WHITE, 13, 1, Ui.LINE)
             gravity = Gravity.CENTER_VERTICAL
             setPadding(px(12), 0, px(12), 0)
         }
@@ -234,8 +235,8 @@ class MainActivity : Activity() {
         trackArtist = Ui.text(this, "Включи музыку в Spotify", 15, 400, Ui.MUTED)
         info.addView(trackArtist, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
         info.addView(Ui.flex(this))
-        progressTrack = FrameLayout(this).apply { background = Ui.round(0xFFE6EAF2.toInt(), 3) }
-        progress = View(this).apply { background = Ui.round(INK, 3) }
+        progressTrack = FrameLayout(this).apply { background = Ui.round(Ui.TRACK, 3) }
+        progress = View(this).apply { background = Ui.round(Ui.INK, 3) }
         progressTrack.addView(progress, FrameLayout.LayoutParams(0, MATCH))
         info.addView(progressTrack, Ui.lp(MATCH, px(5)))
         val ctrl = Ui.row(this)
@@ -243,7 +244,7 @@ class MainActivity : Activity() {
         ctrl.addView(trackTime)
         ctrl.addView(Ui.flex(this))
         ctrl.addView(Ui.circleButton(this, R.drawable.ic_prev, 44, Ui.SOFT, iconSize = 16).apply { setOnClickListener { Media.command("prev") } }, Ui.lp(px(44), px(44)))
-        val play = Ui.circleButton(this, R.drawable.ic_pause, 52, Ui.ACCENT, iconSize = 18).apply {
+        val play = Ui.circleButton(this, R.drawable.ic_pause, 52, Ui.ACCENT, Ui.ON_ACCENT, iconSize = 18).apply {
             setOnClickListener { if (!Media.command("play")) Apps.launchKey(this@MainActivity, "spotify") }
         }
         playIcon = play.getChildAt(0) as ImageView
@@ -259,10 +260,10 @@ class MainActivity : Activity() {
         firstTile = null
         Apps.tiles.forEachIndexed { i, spec ->
             val entry = Apps.resolve(this, spec)
-            val cardBg = if (spec.dark) INK else Ui.WHITE
+            val cardBg = if (spec.dark) Ui.INK else Ui.WHITE
             val tile = Ui.col(this).apply {
                 setPadding(px(20), px(20), px(20), px(20))
-                Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else INK)
+                Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else Ui.INK)
                 setOnClickListener { Apps.invalidate(); Apps.launchKey(this@MainActivity, spec.key) }
                 setOnLongClickListener { pickApp(spec); true }
             }
@@ -271,13 +272,13 @@ class MainActivity : Activity() {
             if (appIcon != null && !spec.dark) {
                 iconBox.addView(ImageView(this).apply { setImageDrawable(appIcon) }, FrameLayout.LayoutParams(px(44), px(44), Gravity.CENTER))
             } else {
-                iconBox.addView(Ui.icon(this, spec.fallbackIcon, 28), FrameLayout.LayoutParams(px(28), px(28), Gravity.CENTER))
+                iconBox.addView(Ui.icon(this, spec.fallbackIcon, 28, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(28), px(28), Gravity.CENTER))
             }
             tile.addView(iconBox, Ui.lp(px(60), px(60)))
             tile.addView(Ui.flex(this))
-            tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Color.WHITE else INK).apply { letterSpacing = -0.015f })
+            tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Ui.INVERSE else Ui.INK).apply { letterSpacing = -0.015f })
             val hint = if (entry == null && spec.candidates.isNotEmpty()) "Не установлено" else spec.hint
-            tile.addView(Ui.text(this, hint, 14, 400, if (spec.dark) 0xFFB8BDC9.toInt() else Ui.MUTED), Ui.lp(WRAP, WRAP).apply { topMargin = px(4) })
+            tile.addView(Ui.text(this, hint, 14, 400, if (spec.dark) Ui.INVERSE_SUB else Ui.MUTED), Ui.lp(WRAP, WRAP).apply { topMargin = px(4) })
             tilesRow.addView(tile, Ui.lp(0, MATCH, 1f).apply { if (i > 0) leftMargin = px(16) })
             if (i == 0) firstTile = tile
         }
@@ -299,13 +300,28 @@ class MainActivity : Activity() {
         val items = listOf(R.drawable.ic_grid to "apps", R.drawable.ic_hdmi to "hdmi", R.drawable.ic_cast to "cast", R.drawable.ic_gear to "settings")
         for ((res, key) in items) {
             val b = FrameLayout(this).apply {
-                Ui.focusable(this, Color.WHITE, 24)
-                addView(Ui.icon(this@MainActivity, res, 22, 0xFF6B7280.toInt()), FrameLayout.LayoutParams(px(22), px(22), Gravity.CENTER))
+                Ui.focusable(this, Ui.WHITE, 24)
+                addView(Ui.icon(this@MainActivity, res, 22, Ui.SUBTLE), FrameLayout.LayoutParams(px(22), px(22), Gravity.CENTER))
                 setOnClickListener { Apps.launchKey(this@MainActivity, key) }
             }
             n.addView(b, Ui.lp(px(56), px(48)).apply { leftMargin = px(6) })
         }
         return n
+    }
+
+    /** Day ↔ night: rebuild the screen in the new palette and fade it in. */
+    private fun switchTheme() {
+        Ui.applyTheme(!Ui.night)
+        val root = build()
+        root.alpha = 0f
+        setContentView(root)
+        renderTiles()
+        lastMinute = ""
+        mediaKey = Unit
+        renderMedia()
+        Weather.peek()?.let { showWeather(it) }
+        firstTile?.requestFocus()
+        root.animate().alpha(1f).setDuration(600).start()
     }
 
     // ---------- live data ----------

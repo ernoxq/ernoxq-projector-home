@@ -18,16 +18,51 @@ import kotlin.math.roundToInt
 
 /** Palette and sizing shared by every screen. Sizes are written in mockup pixels (1280×720) and scaled to the real screen. */
 object Ui {
-    const val GROUND = 0xFFC9D3EA.toInt()
-    const val INK = 0xFF121212.toInt()
-    const val WHITE = Color.WHITE
-    const val SOFT = 0xFFEEF1F7.toInt()
-    const val GLASS = 0x8CFFFFFF.toInt()
-    const val MUTED = 0xFF555B66.toInt()
-    const val LINE = 0xFFDDE2EC.toInt()
+    // Day palette by default; applyTheme(true) swaps to the night one.
+    var GROUND = 0xFFC9D3EA.toInt()
+    var INK = 0xFF121212.toInt()          // main text and icons
+    var WHITE = Color.WHITE               // cards
+    var SOFT = 0xFFEEF1F7.toInt()
+    var GLASS = 0x8CFFFFFF.toInt()
+    var MUTED = 0xFF555B66.toInt()
+    var LINE = 0xFFDDE2EC.toInt()
+    var NIGHT = 0xFF2B3247.toInt()
+    var NIGHT2 = 0xFF3A4360.toInt()
+    var INVERSE = Color.WHITE             // text on an INK-coloured surface
+    var SUBTLE = 0xFF6B7280.toInt()       // quiet icons in the bottom menu
+    var DIVIDER = 0x2E121212
+    var CHIP = 0xFF3F4552.toInt()
+    var TRACK = 0xFFE6EAF2.toInt()
+    var INVERSE_SUB = 0xFFB8BDC9.toInt()
     const val ACCENT = 0xFFFBE38E.toInt()
-    const val NIGHT = 0xFF2B3247.toInt()
-    const val NIGHT2 = 0xFF3A4360.toInt()
+    const val ON_ACCENT = 0xFF121212.toInt()
+
+    var night = false
+        private set
+
+    fun applyTheme(isNight: Boolean) {
+        night = isNight
+        if (isNight) {
+            GROUND = 0xFF111318.toInt(); INK = 0xFFF2F2F4.toInt(); WHITE = 0xFF20232B.toInt()
+            SOFT = 0xFF2C3039.toInt(); GLASS = 0x1FFFFFFF; MUTED = 0xFF9BA1AD.toInt(); LINE = 0xFF353A45.toInt()
+            NIGHT = 0xFF0B0D12.toInt(); NIGHT2 = 0xFF1A1E29.toInt(); INVERSE = 0xFF121212.toInt()
+            SUBTLE = 0xFF8A909C.toInt(); DIVIDER = 0x2EFFFFFF; CHIP = 0xFFB9BEC9.toInt(); TRACK = 0xFF353A45.toInt()
+            INVERSE_SUB = 0xFF4A4F5A.toInt()
+        } else {
+            GROUND = 0xFFC9D3EA.toInt(); INK = 0xFF121212.toInt(); WHITE = Color.WHITE
+            SOFT = 0xFFEEF1F7.toInt(); GLASS = 0x8CFFFFFF.toInt(); MUTED = 0xFF555B66.toInt(); LINE = 0xFFDDE2EC.toInt()
+            NIGHT = 0xFF2B3247.toInt(); NIGHT2 = 0xFF3A4360.toInt(); INVERSE = Color.WHITE
+            SUBTLE = 0xFF6B7280.toInt(); DIVIDER = 0x2E121212; CHIP = 0xFF3F4552.toInt(); TRACK = 0xFFE6EAF2.toInt()
+            INVERSE_SUB = 0xFFB8BDC9.toInt()
+        }
+    }
+
+    /** Night from 20:30 until 08:00, Chișinău time. */
+    fun isNightNow(): Boolean {
+        val cal = java.util.Calendar.getInstance(Clock.zone).apply { time = Clock.now() }
+        val m = cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
+        return m >= 20 * 60 + 30 || m < 8 * 60
+    }
 
     var scale = 1f
     private val FOCUS_EASE = DecelerateInterpolator(1.6f)

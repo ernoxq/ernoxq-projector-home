@@ -7,18 +7,22 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
+import android.view.animation.PathInterpolator
 
 /**
- * iOS-style volume slider: a wide rounded bar that grows out of the left edge of the screen on a
- * soft dark "bulge", fills smoothly with the level, and melts back into the edge a moment later.
+ * Apple TV–style volume indicator: a dark glass capsule that glides down in the top-right corner,
+ * shows where the sound is playing (e.g. "Redmi Soundbar" over Bluetooth, or "Проектор"),
+ * a thin level bar under the name, and glides back up a moment later.
  * Replaces the stock volume panel.
  */
 object VolumeHud {
@@ -27,16 +31,38 @@ object VolumeHud {
     private var shown = false
     private val hide = Runnable { slide(false) }
 
+    // Apple-like motion: a long, soft spring on the way in, an unhurried ease on the way out.
+    private val springIn = PathInterpolator(0.16f, 1.12f, 0.3f, 1f)
+    private val easeOut = PathInterpolator(0.55f, 0f, 0.75f, 0.2f)
+    private val easeBump = PathInterpolator(0.3f, 0f, 0.2f, 1f)
+
     fun available(ctx: Context): Boolean = Settings.canDrawOverlays(ctx)
 
     fun show(ctx: Context, percent: Int, muted: Boolean) {
+        val name = outputName(ctx)
         main.post {
             val v = view ?: attach(ctx.applicationContext) ?: return@post
-            v.setLevel(if (muted) 0f else percent / 100f)
+            v.update(name, if (muted) 0f else percent / 100f, muted)
             if (!shown) slide(true) else bump(v)
             main.removeCallbacks(hide)
             main.postDelayed(hide, 2600)
         }
+    }
+
+    /** Where the sound goes right now: a Bluetooth speaker's own name, an external output, or the projector. */
+    private fun outputName(ctx: Context): String {
+        val am = ctx.getSystemService(AudioManager::class.java) ?: return "Проектор"
+        val outs = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        fun nameOf(d: AudioDeviceInfo, fallback: String) =
+            d.productName?.toString()?.trim()?.takeIf { it.isNotEmpty() && !it.equals(android.os.Build.MODEL, true) } ?: fallback
+        outs.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }?.let { return nameOf(it, "Bluetooth") }
+        val external = setOf(
+            AudioDeviceInfo.TYPE_HDMI, AudioDeviceInfo.TYPE_HDMI_ARC, AudioDeviceInfo.TYPE_USB_DEVICE,
+            AudioDeviceInfo.TYPE_USB_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_WIRED_HEADSET,
+            AudioDeviceInfo.TYPE_LINE_ANALOG, AudioDeviceInfo.TYPE_AUX_LINE,
+        )
+        outs.firstOrNull { it.type in external }?.let { return nameOf(it, "Внешний звук") }
+        return "Проектор"
     }
 
     private fun attach(ctx: Context): HudView? {
@@ -44,20 +70,21 @@ object VolumeHud {
         Ui.init(ctx)
         val v = HudView(ctx)
         val lp = WindowManager.LayoutParams(
-            Ui.px(120), Ui.px(420),
+            Ui.px(380), Ui.px(96),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            x = 0
+            gravity = Gravity.TOP or Gravity.END
+            x = Ui.px(40)
+            y = Ui.px(32)
         }
         return try {
             ctx.getSystemService(WindowManager::class.java).addView(v, lp)
-            v.pivotX = 0f
-            v.pivotY = Ui.pxf(210)
-            v.translationX = -Ui.pxf(120)
+            v.pivotX = Ui.pxf(380)
+            v.pivotY = 0f
+            v.translationY = -Ui.pxf(150)
             v.alpha = 0f
             view = v
             v
@@ -66,22 +93,17 @@ object VolumeHud {
         }
     }
 
-    // Apple-like motion: a long, soft spring on the way in, an unhurried ease on the way out.
-    private val springIn = android.view.animation.PathInterpolator(0.16f, 1.12f, 0.3f, 1f)
-    private val easeOut = android.view.animation.PathInterpolator(0.55f, 0f, 0.75f, 0.2f)
-    private val easeBump = android.view.animation.PathInterpolator(0.3f, 0f, 0.2f, 1f)
-
     private fun slide(inside: Boolean) {
         val v = view ?: return
         shown = inside
         v.animate().cancel()
         if (inside) {
-            v.scaleY = 0.78f
             v.scaleX = 0.9f
-            v.animate().translationX(0f).alpha(1f).scaleY(1f).scaleX(1f)
+            v.scaleY = 0.9f
+            v.animate().translationY(0f).alpha(1f).scaleX(1f).scaleY(1f)
                 .setDuration(620).setInterpolator(springIn).withLayer().start()
         } else {
-            v.animate().translationX(-Ui.pxf(120)).alpha(0f).scaleY(0.82f).scaleX(0.92f)
+            v.animate().translationY(-Ui.pxf(150)).alpha(0f).scaleX(0.92f).scaleY(0.92f)
                 .setDuration(520).setInterpolator(easeOut).withLayer().start()
         }
     }
@@ -89,65 +111,86 @@ object VolumeHud {
     /** A tiny breath when the level changes while it's already on screen. */
     private fun bump(v: View) {
         v.animate().cancel()
-        v.animate().translationX(0f).alpha(1f).scaleX(1.04f).scaleY(1.02f).setDuration(120).setInterpolator(easeBump)
+        v.animate().translationY(0f).alpha(1f).scaleX(1.03f).scaleY(1.03f).setDuration(120).setInterpolator(easeBump)
             .withEndAction { v.animate().scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(easeBump).start() }
             .start()
     }
 
-    private class HudView(ctx: Context) : View(ctx) {
-        private val bulge = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF2141416.toInt() }
-        private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3A3A3C.toInt() }
-        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF5F5F7.toInt() }
+    private class HudView(private val ctx: Context) : View(ctx) {
+        private val glass = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xEB1E1E21.toInt() }
         private val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = Ui.pxf(1.5f)
-            color = 0x26FFFFFF
+            strokeWidth = Ui.pxf(1.2f)
+            color = 0x1FFFFFFF
         }
+        private val iconBg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x24FFFFFF }
+        private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x40FFFFFF }
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF5F5F7.toInt() }
+        private val title = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFF5F5F7.toInt()
+            textSize = Ui.pxf(21)
+            typeface = Ui.font(ctx, 600)
+        }
+        private val icon: Drawable? = ctx.getDrawable(R.drawable.ic_volume)
+        private val iconMuted: Drawable? = ctx.getDrawable(R.drawable.ic_volume_off)
+
+        private var name = "Проектор"
         private var level = 0f
+        private var muted = false
         private var anim: ValueAnimator? = null
+        private val box = RectF()
         private val bar = RectF()
-        private val path = Path()
         private val clip = Path()
 
-        fun setLevel(target: Float) {
+        fun update(newName: String, target: Float, isMuted: Boolean) {
+            name = newName
+            muted = isMuted
             anim?.cancel()
             anim = ValueAnimator.ofFloat(level, target.coerceIn(0f, 1f)).apply {
                 duration = 340
-                interpolator = android.view.animation.PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
+                interpolator = PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
                 addUpdateListener { level = it.animatedValue as Float; invalidate() }
                 start()
             }
+            invalidate()
         }
 
         override fun onDraw(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
-            // The dark shape that seems to swell out of the screen edge: flat on the left,
-            // round on the right, with soft concave shoulders at the top and bottom.
-            val bw = Ui.pxf(84)
-            val sh = Ui.pxf(46)
-            path.reset()
-            path.moveTo(0f, 0f)
-            path.cubicTo(0f, sh * 0.9f, bw, sh * 0.4f, bw, sh * 1.6f)
-            path.lineTo(bw, h - sh * 1.6f)
-            path.cubicTo(bw, h - sh * 0.4f, 0f, h - sh * 0.9f, 0f, h)
-            path.close()
-            canvas.drawPath(path, bulge)
+            val rad = h / 2
+            box.set(0f, 0f, w, h)
+            canvas.drawRoundRect(box, rad, rad, glass)
+            canvas.drawRoundRect(box, rad, rad, rim)
 
-            // The wide slider bar inside it.
-            val barW = Ui.pxf(40)
-            val left = (bw - barW) / 2 + Ui.pxf(4)
-            bar.set(left, sh * 1.9f, left + barW, h - sh * 1.9f)
-            val r = barW / 2
+            // Speaker in a soft round badge on the left.
+            val pad = Ui.pxf(16)
+            val badge = h - pad * 2
+            val cx = pad + badge / 2
+            val cy = h / 2
+            canvas.drawCircle(cx, cy, badge / 2, iconBg)
+            (if (muted || level == 0f) iconMuted else icon)?.let { d ->
+                val s = Ui.px(30)
+                d.setBounds((cx - s / 2).toInt(), (cy - s / 2).toInt(), (cx + s / 2).toInt(), (cy + s / 2).toInt())
+                d.setTint(0xFFF5F5F7.toInt())
+                d.draw(canvas)
+            }
+
+            // Device name, then the thin level bar under it.
+            val left = pad + badge + Ui.pxf(16)
+            val right = w - Ui.pxf(28)
+            val label = TextUtils.ellipsize(name, title, right - left, TextUtils.TruncateAt.END).toString()
+            canvas.drawText(label, left, cy - Ui.pxf(6), title)
+
+            val bh = Ui.pxf(7)
+            bar.set(left, cy + Ui.pxf(10), right, cy + Ui.pxf(10) + bh)
             clip.reset()
-            clip.addRoundRect(bar, r, r, Path.Direction.CW)
+            clip.addRoundRect(bar, bh / 2, bh / 2, Path.Direction.CW)
             canvas.save()
             canvas.clipPath(clip)
             canvas.drawRect(bar, track)
-            val top = bar.bottom - bar.height() * level
-            canvas.drawRect(bar.left, top, bar.right, bar.bottom, fill)
+            canvas.drawRect(bar.left, bar.top, bar.left + bar.width() * level, bar.bottom, fill)
             canvas.restore()
-            canvas.drawRoundRect(bar, r, r, rim)
         }
     }
 }

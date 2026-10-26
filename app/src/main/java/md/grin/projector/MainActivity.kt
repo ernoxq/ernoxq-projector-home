@@ -430,15 +430,26 @@ class MainActivity : Activity() {
         val adb = if (Adb.connected) "подключено" else "не подключено (${Adb.lastError ?: "ждёт разрешения"})"
         val player = if (Media.hasAccess(this)) "есть доступ" else "нет доступа"
         val bright = Picture.isOn(this)
+        val warm = Picture.isWarm(this)
+        val volUi = getSharedPreferences("home", MODE_PRIVATE).getString("volume_ui", null)
         AlertDialog.Builder(this, R.style.Dialog)
-            .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player")
-            .setItems(arrayOf(if (bright) "Яркий режим: включён — выключить" else "Яркий режим: выключен — включить", "Настройки проектора")) { _, i ->
+            .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
+                (volUi?.let { "\nРодная громкость: $it" } ?: ""))
+            .setItems(arrayOf(
+                if (bright) "Яркий режим: включён — выключить" else "Яркий режим: выключен — включить",
+                if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
+                "Настройки проектора",
+            )) { _, i ->
                 when (i) {
                     0 -> Thread {
                         val ok = Picture.set(applicationContext, !bright)
                         main.post { android.widget.Toast.makeText(this, if (ok) (if (!bright) "Яркий режим включён" else "Обычная картинка") else "Нужно подключение «кнопок» (ADB)", android.widget.Toast.LENGTH_SHORT).show() }
                     }.start()
-                    1 -> Apps.openSettings(this)
+                    1 -> Thread {
+                        val ok = Picture.setWarm(applicationContext, !warm)
+                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!warm) "Night Shift включён" else "Night Shift выключен") else "Нужно подключение «кнопок» (ADB)", android.widget.Toast.LENGTH_SHORT).show() }
+                    }.start()
+                    2 -> Apps.openSettings(this)
                 }
             }
             .setPositiveButton("Настроить автоматически") { _, _ ->

@@ -157,6 +157,7 @@ svg{display:block}
   <h3>Картинка</h3>
   <div class="apps" style="grid-template-columns:1fr">
     <button id="bright" onclick="toggleBright()">Яркий режим (для света в комнате): выкл</button>
+    <button id="warm" onclick="toggleWarm()">Night Shift (тёплые цвета): выкл</button>
   </div>
 </div>
 
@@ -242,6 +243,9 @@ kin.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit
 
 let brightOn=false;
 function toggleBright(){api('/api/bright?on='+(brightOn?0:1)).then(s=>{if(s&&s.ok){brightOn=s.on;paintBright()}})}
+let warmOn=false;
+function toggleWarm(){api('/api/warm?on='+(warmOn?0:1)).then(s=>{if(s&&s.ok){warmOn=s.on;paintWarm()}})}
+function paintWarm(){const b=$('warm');b.textContent='Night Shift (тёплые цвета): '+(warmOn?'вкл':'выкл');b.classList.toggle('acc',warmOn)}
 function paintBright(){const b=$('bright');b.textContent='Яркий режим (для света в комнате): '+(brightOn?'вкл':'выкл');b.classList.toggle('acc',brightOn)}
 
 let lastArt='';
@@ -255,6 +259,7 @@ function refresh(){
     if(!dragging)setFill(s.volume);
     $('warn').classList.toggle('show',!s.adb);
     if(s.bright!==undefined&&s.bright!==brightOn){brightOn=s.bright;paintBright()}
+    if(s.warm!==undefined&&s.warm!==warmOn){warmOn=s.warm;paintWarm()}
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
     else if(!s.typing&&kbarOpen&&!editing)hideKbar(false);
     const m=s.media;

@@ -71,7 +71,10 @@ object Control {
         return true
     }
 
+    @Volatile var lastOwnChange = 0L
+
     private fun showHud(ctx: Context) {
+        lastOwnChange = android.os.SystemClock.elapsedRealtime()
         val (v, muted) = volumeState(ctx)
         VolumeHud.show(ctx, v, muted)
     }

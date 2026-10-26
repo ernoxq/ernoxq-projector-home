@@ -4,9 +4,9 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
-import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -14,11 +14,12 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.PathInterpolator
+import android.view.animation.OvershootInterpolator
 
 /**
- * iPhone-style volume indicator: a tall glass capsule that slides in from the right edge,
- * fills smoothly with the level, and slides away a moment later. Replaces the stock Android panel.
+ * iOS-style volume slider: a wide rounded bar that grows out of the left edge of the screen on a
+ * soft dark "bulge", fills smoothly with the level, and melts back into the edge a moment later.
+ * Replaces the stock volume panel.
  */
 object VolumeHud {
     private val main = Handler(Looper.getMainLooper())
@@ -31,10 +32,10 @@ object VolumeHud {
     fun show(ctx: Context, percent: Int, muted: Boolean) {
         main.post {
             val v = view ?: attach(ctx.applicationContext) ?: return@post
-            v.setLevel(if (muted) 0f else percent / 100f, muted)
+            v.setLevel(if (muted) 0f else percent / 100f)
             if (!shown) slide(true)
             main.removeCallbacks(hide)
-            main.postDelayed(hide, 1600)
+            main.postDelayed(hide, 1700)
         }
     }
 
@@ -43,17 +44,21 @@ object VolumeHud {
         Ui.init(ctx)
         val v = HudView(ctx)
         val lp = WindowManager.LayoutParams(
-            Ui.px(64) + Ui.px(40), Ui.px(250),
+            Ui.px(120), Ui.px(420),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            x = 0
         }
         return try {
             ctx.getSystemService(WindowManager::class.java).addView(v, lp)
-            v.translationX = Ui.pxf(140)
+            v.pivotX = 0f
+            v.pivotY = Ui.pxf(210)
+            v.translationX = -Ui.pxf(120)
+            v.alpha = 0f
             view = v
             v
         } catch (e: Exception) {
@@ -65,29 +70,35 @@ object VolumeHud {
         val v = view ?: return
         shown = inside
         v.animate().cancel()
-        v.animate()
-            .translationX(if (inside) 0f else Ui.pxf(140))
-            .alpha(if (inside) 1f else 0f)
-            .setDuration(if (inside) 320 else 260)
-            .setInterpolator(if (inside) PathInterpolator(0.2f, 0.9f, 0.25f, 1f) else DecelerateInterpolator())
-            .start()
+        if (inside) {
+            v.scaleY = 0.86f
+            v.animate().translationX(0f).alpha(1f).scaleY(1f)
+                .setDuration(360).setInterpolator(OvershootInterpolator(1.1f)).start()
+        } else {
+            v.animate().translationX(-Ui.pxf(120)).alpha(0f).scaleY(0.9f)
+                .setDuration(280).setInterpolator(DecelerateInterpolator()).start()
+        }
     }
 
     private class HudView(ctx: Context) : View(ctx) {
-        private val glass = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE62A2A2D.toInt() }
+        private val bulge = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF2141416.toInt() }
+        private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3A3A3C.toInt() }
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF5F5F7.toInt() }
-        private val icon: Drawable? = ctx.getDrawable(R.drawable.ic_volume)
-        private val iconMuted: Drawable? = ctx.getDrawable(R.drawable.ic_volume_off)
+        private val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = Ui.pxf(1.5f)
+            color = 0x26FFFFFF
+        }
         private var level = 0f
-        private var muted = false
         private var anim: ValueAnimator? = null
-        private val r = RectF()
+        private val bar = RectF()
+        private val path = Path()
+        private val clip = Path()
 
-        fun setLevel(target: Float, isMuted: Boolean) {
-            muted = isMuted
+        fun setLevel(target: Float) {
             anim?.cancel()
             anim = ValueAnimator.ofFloat(level, target.coerceIn(0f, 1f)).apply {
-                duration = 180
+                duration = 200
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { level = it.animatedValue as Float; invalidate() }
                 start()
@@ -95,25 +106,34 @@ object VolumeHud {
         }
 
         override fun onDraw(canvas: Canvas) {
-            val w = Ui.pxf(64)
-            val left = width - w - Ui.pxf(40)
-            r.set(left, 0f, left + w, height.toFloat())
-            val rad = w / 2
+            val w = width.toFloat()
+            val h = height.toFloat()
+            // The dark shape that seems to swell out of the screen edge: flat on the left,
+            // round on the right, with soft concave shoulders at the top and bottom.
+            val bw = Ui.pxf(84)
+            val sh = Ui.pxf(46)
+            path.reset()
+            path.moveTo(0f, 0f)
+            path.cubicTo(0f, sh * 0.9f, bw, sh * 0.4f, bw, sh * 1.6f)
+            path.lineTo(bw, h - sh * 1.6f)
+            path.cubicTo(bw, h - sh * 0.4f, 0f, h - sh * 0.9f, 0f, h)
+            path.close()
+            canvas.drawPath(path, bulge)
+
+            // The wide slider bar inside it.
+            val barW = Ui.pxf(40)
+            val left = (bw - barW) / 2 + Ui.pxf(4)
+            bar.set(left, sh * 1.9f, left + barW, h - sh * 1.9f)
+            val r = barW / 2
+            clip.reset()
+            clip.addRoundRect(bar, r, r, Path.Direction.CW)
             canvas.save()
-            val clip = android.graphics.Path().apply { addRoundRect(r, rad, rad, android.graphics.Path.Direction.CW) }
             canvas.clipPath(clip)
-            canvas.drawRect(r, glass)
-            val top = r.bottom - r.height() * level
-            canvas.drawRect(r.left, top, r.right, r.bottom, fill)
+            canvas.drawRect(bar, track)
+            val top = bar.bottom - bar.height() * level
+            canvas.drawRect(bar.left, top, bar.right, bar.bottom, fill)
             canvas.restore()
-            // Speaker icon near the bottom: dark on the white fill, light on the glass.
-            val d = (if (muted || level == 0f) iconMuted else icon) ?: return
-            val s = Ui.px(26)
-            val cx = r.centerX().toInt()
-            val cy = (r.bottom - Ui.pxf(34)).toInt()
-            d.setBounds(cx - s / 2, cy - s / 2, cx + s / 2, cy + s / 2)
-            d.setTint(if (top < cy) 0xFF1C1C1E.toInt() else 0xFFF5F5F7.toInt())
-            d.draw(canvas)
+            canvas.drawRoundRect(bar, r, r, rim)
         }
     }
 }

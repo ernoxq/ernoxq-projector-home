@@ -103,6 +103,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/submit" -> ok(out, json("ok" to (TvKeyboard.submit() || Control.key(ctx, "enter"))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/bright" -> ok(out, json("ok" to Picture.set(ctx, q("on") == "1"), "on" to Picture.isOn(ctx)))
+            "/api/warm" -> ok(out, json("ok" to Picture.setWarm(ctx, q("on") == "1"), "on" to Picture.isWarm(ctx)))
             "/api/update" -> {
                 Thread { Updater.check(ctx) }.start()
                 ok(out, json("ok" to true, "version" to "1.0.${Updater.currentBuild(ctx)}"))
@@ -139,6 +140,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("text", if (TvKeyboard.active) TvKeyboard.text else FocusWatcher.text)
             .put("focusWatch", FocusWatcher.enabled)
             .put("bright", Picture.isOn(ctx))
+            .put("warm", Picture.isWarm(ctx))
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

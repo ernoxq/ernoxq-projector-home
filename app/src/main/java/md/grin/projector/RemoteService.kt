@@ -28,6 +28,7 @@ class RemoteService : Service() {
         Media.attach(applicationContext)
         updates.postDelayed(updateCheck, 60_000)
         Thread { Picture.restore(applicationContext) }.start()
+        registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
     }
 
     private val updates = android.os.Handler(android.os.Looper.getMainLooper())
@@ -40,9 +41,35 @@ class RemoteService : Service() {
         }
     }
 
+    private var lastScan = 0L
+
+    /** Volume changed by the projector's own remote: show our slider and note who drew the stock bar. */
+    private val volumeChanged = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - Control.lastOwnChange < 800) return
+            if (VolumeHud.available(c)) {
+                val (v, muted) = Control.volumeState(c)
+                VolumeHud.show(c, v, muted)
+            }
+            if (now - lastScan < 10_000) return
+            lastScan = now
+            Thread {
+                Thread.sleep(250)
+                val out = Adb.run(c, "dumpsys window windows | grep -iE -A 8 'Window #.*vol'") ?: return@Thread
+                val titles = Regex("Window\\{[0-9a-f]+ u0 ([^ }]+)").findAll(out).map { it.groupValues[1] }
+                val pkgs = Regex("(?:pkg|package|mOwnerPackage)=([A-Za-z0-9_.]+)").findAll(out).map { it.groupValues[1] }
+                val owners = (titles + pkgs).distinct().toList()
+                if (owners.isNotEmpty()) c.getSharedPreferences("home", Context.MODE_PRIVATE).edit()
+                    .putString("volume_ui", owners.joinToString(", ")).apply()
+            }.start()
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
+        try { unregisterReceiver(volumeChanged) } catch (_: Exception) {}
         server?.close()
         super.onDestroy()
     }

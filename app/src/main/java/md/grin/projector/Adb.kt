@@ -46,6 +46,15 @@ object Adb {
         return false
     }
 
+    /** Runs a command and returns what it printed (null if ADB isn't available). */
+    @Synchronized
+    fun run(ctx: Context, cmd: String): String? = try {
+        (dadb ?: connect(ctx))?.shell(cmd)?.allOutput
+    } catch (e: Throwable) {
+        lastError = e.message
+        null
+    }
+
     private var live: dadb.AdbShellStream? = null
 
     /**

@@ -56,15 +56,24 @@ object Control {
             "mute" -> AudioManager.ADJUST_TOGGLE_MUTE
             else -> return false
         }
-        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, adj, AudioManager.FLAG_SHOW_UI)
+        val hud = VolumeHud.available(ctx)
+        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, adj, if (hud) 0 else AudioManager.FLAG_SHOW_UI)
+        if (hud) showHud(ctx)
         return true
     }
 
     fun setVolume(ctx: Context, percent: Int): Boolean {
         val am = ctx.getSystemService(AudioManager::class.java) ?: return false
         val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        am.setStreamVolume(AudioManager.STREAM_MUSIC, (percent.coerceIn(0, 100) * max + 50) / 100, AudioManager.FLAG_SHOW_UI)
+        val hud = VolumeHud.available(ctx)
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, (percent.coerceIn(0, 100) * max + 50) / 100, if (hud) 0 else AudioManager.FLAG_SHOW_UI)
+        if (hud) showHud(ctx)
         return true
+    }
+
+    private fun showHud(ctx: Context) {
+        val (v, muted) = volumeState(ctx)
+        VolumeHud.show(ctx, v, muted)
     }
 
     fun volumeState(ctx: Context): Pair<Int, Boolean> {

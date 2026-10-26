@@ -33,6 +33,18 @@ class FocusWatcher : AccessibilityService() {
         }
     }
 
+    override fun onKeyEvent(event: android.view.KeyEvent): Boolean {
+        val dir = when (event.keyCode) {
+            android.view.KeyEvent.KEYCODE_VOLUME_UP -> "up"
+            android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> "down"
+            android.view.KeyEvent.KEYCODE_VOLUME_MUTE -> "mute"
+            else -> return false
+        }
+        if (!VolumeHud.available(this)) return false
+        if (event.action == android.view.KeyEvent.ACTION_DOWN) Control.volume(this, dir)
+        return true
+    }
+
     override fun onInterrupt() {}
 
     override fun onDestroy() {

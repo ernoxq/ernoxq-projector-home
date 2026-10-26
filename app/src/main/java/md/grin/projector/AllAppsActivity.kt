@@ -18,6 +18,7 @@ class AllAppsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Ui.init(this)
+        Sounds.init(this)
         val apps = Apps.all(this)
         val root = Ui.col(this).apply {
             setBackgroundColor(Ui.GROUND)
@@ -51,7 +52,8 @@ class AllAppsActivity : Activity() {
                     return card
                 }
             }
-            setOnItemClickListener { _, _, p, _ -> Apps.launch(this@AllAppsActivity, apps[p]) }
+            isSoundEffectsEnabled = false
+            setOnItemClickListener { _, _, p, _ -> Sounds.select(); Apps.launch(this@AllAppsActivity, apps[p]) }
             onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
                 var last: View? = null
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, p: Int, id: Long) {
@@ -60,6 +62,7 @@ class AllAppsActivity : Activity() {
                     view?.background = Ui.round(Ui.WHITE, 28, 4, Ui.INK)
                     view?.animate()?.scaleX(1.05f)?.scaleY(1.05f)?.setDuration(160)?.start()
                     last = view
+                    Sounds.tick()
                 }
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             }

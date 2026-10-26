@@ -46,7 +46,24 @@ object Adb {
         return false
     }
 
-    fun key(ctx: Context, code: Int): Boolean = shell(ctx, "input keyevent $code")
+    private var live: dadb.AdbShellStream? = null
+
+    /**
+     * Key presses go through one shell that stays open, and we don't wait for each command to finish.
+     * That removes the per-press connection setup, so the phone touchpad feels much quicker.
+     */
+    @Synchronized
+    fun key(ctx: Context, code: Int): Boolean {
+        try {
+            val s = live ?: (dadb ?: connect(ctx))?.openShell()?.also { live = it } ?: return false
+            s.write("input keyevent $code\n")
+            return true
+        } catch (e: Throwable) {
+            try { live?.close() } catch (_: Throwable) {}
+            live = null
+        }
+        return shell(ctx, "input keyevent $code")
+    }
 
     /** Silent install (used for updates). The app restarts itself afterwards. */
     @Synchronized

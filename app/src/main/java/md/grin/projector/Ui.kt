@@ -108,19 +108,22 @@ object Ui {
     fun focusable(v: View, bg: Int, radius: Number, ring: Int = INK) {
         v.isFocusable = true
         v.isClickable = true
+        // Our own tick replaces the stock system click.
+        v.isSoundEffectsEnabled = false
         val normal = round(bg, radius)
         val focused = round(bg, radius, 4, ring)
         v.background = normal
+        // A permanent GPU layer: the card is drawn once, and growing it on focus is just moving a texture.
+        v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         v.setOnFocusChangeListener { view, has ->
             view.background = if (has) focused else normal
-            // Scale only (no shadows) and render through a GPU layer while animating: smooth on the weak Mali GPU.
+            if (has) Sounds.tick()
             view.animate().cancel()
             view.animate()
                 .scaleX(if (has) 1.05f else 1f)
                 .scaleY(if (has) 1.05f else 1f)
-                .setDuration(140)
+                .setDuration(120)
                 .setInterpolator(FOCUS_EASE)
-                .withLayer()
                 .start()
         }
     }

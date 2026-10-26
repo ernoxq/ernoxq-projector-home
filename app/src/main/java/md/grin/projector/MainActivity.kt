@@ -54,6 +54,7 @@ class MainActivity : Activity() {
 
     /** Tiles are rebuilt only when an app is installed, removed or updated. */
     private var tilesDirty = true
+    private var lastTrim = 0L
     private val packagesChanged = object : android.content.BroadcastReceiver() {
         override fun onReceive(c: android.content.Context, i: android.content.Intent) {
             Apps.invalidate()
@@ -65,6 +66,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Ui.init(this)
+        Sounds.init(this)
         setContentView(build())
         // The root view paints the background itself; drop the window's copy to avoid drawing the screen twice.
         window.setBackgroundDrawable(null)
@@ -93,6 +95,11 @@ class MainActivity : Activity() {
         super.onResume()
         App.isForeground = true
         if (tilesDirty) { renderTiles(); tilesDirty = false }
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastTrim > 5 * 60_000) {
+            lastTrim = now
+            Thread { Adb.shell(applicationContext, "am kill-all") }.start()
+        }
         Media.attach(applicationContext)
         Media.listen(mediaChanged)
         lastMinute = ""
@@ -111,6 +118,12 @@ class MainActivity : Activity() {
 
     @Deprecated("Home screen: Back does nothing")
     override fun onBackPressed() {}
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0 &&
+            (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)) Sounds.select()
+        return super.dispatchKeyEvent(event)
+    }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_MENU) { showMenu(); return true }

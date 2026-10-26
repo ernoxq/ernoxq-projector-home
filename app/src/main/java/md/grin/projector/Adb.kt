@@ -92,7 +92,9 @@ object Adb {
      * Switches the projector off for real. Pressing the power key only opens the firmware's
      * "Power off / Restart" menu, so ask Android to shut down directly instead.
      */
-    fun powerOff(ctx: Context): Boolean {
+    fun powerOff(ctx: Context, reason: String = "кнопка"): Boolean {
+        val stamp = java.text.SimpleDateFormat("dd.MM HH:mm", java.util.Locale("ru")).apply { timeZone = Clock.zone }.format(Clock.now())
+        ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putString("last_off", "$stamp · $reason").commit()
         if (shell(ctx, "svc power shutdown")) return true
         if (shell(ctx, "am start -a com.android.internal.intent.action.REQUEST_SHUTDOWN --ez android.intent.extra.KEY_CONFIRM false --activity-clear-task")) return true
         return shell(ctx, "am broadcast -a android.intent.action.ACTION_REQUEST_SHUTDOWN --ez android.intent.extra.KEY_CONFIRM false")

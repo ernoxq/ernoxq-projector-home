@@ -77,11 +77,11 @@ object SleepTimer {
                     offAt = 0L
                     hideNotice()
                     lastActivity = now
-                    Thread { Adb.powerOff(ctx) }.start()
+                    Thread { Adb.powerOff(ctx, "таймер сна") }.start()
                 } else {
                     notice?.text = message(left)
                 }
-            } else if (isOn(ctx) && lateNight() && now - lastActivity >= IDLE_MS - WARN_MS) {
+            } else if (isOn(ctx) && lateNight() && now > 10 * 60_000L && now - lastActivity >= IDLE_MS - WARN_MS) {
                 offAt = now + WARN_MS
                 showNotice(ctx)
             }

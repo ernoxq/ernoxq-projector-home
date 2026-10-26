@@ -98,6 +98,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 ok(out, json("ok" to r))
             }
             "/api/text" -> ok(out, json("ok" to Control.typeText(ctx, q("t"))))
+            // Live typing: replaces the focused field's text as the phone keyboard types
+            "/api/settext" -> ok(out, json("ok" to (FocusWatcher.setText(q("t")) || Control.typeText(ctx, q("t")))))
             "/api/setup" -> ok(out, json("ok" to Adb.setup(ctx)))
             "/api/update" -> {
                 Thread { Updater.check(ctx) }.start()
@@ -130,6 +132,10 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("muted", muted)
             .put("adb", Adb.connected)
             .put("mediaAccess", Media.hasAccess(ctx))
+            .put("typing", FocusWatcher.typing)
+            .put("typingAt", FocusWatcher.changedAt)
+            .put("text", FocusWatcher.text)
+            .put("focusWatch", FocusWatcher.enabled)
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

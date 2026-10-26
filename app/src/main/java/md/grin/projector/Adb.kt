@@ -125,6 +125,9 @@ object Adb {
         shell(ctx, "settings put global transition_animation_scale 0.5")
         shell(ctx, "settings put global animator_duration_scale 0.5")
         shell(ctx, "dumpsys deviceidle whitelist +$pkg")
+        // Lets the phone remote see when a text field is selected on the projector
+        shell(ctx, "settings put secure enabled_accessibility_services $pkg/$pkg.FocusWatcher")
+        shell(ctx, "settings put secure accessibility_enabled 1")
         nameAirPlay(ctx)
         return true
     }

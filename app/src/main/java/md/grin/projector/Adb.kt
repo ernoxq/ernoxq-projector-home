@@ -109,6 +109,15 @@ object Adb {
         return TvKeyboard.isDefault(ctx)
     }
 
+    /** Replaces the stock photo screensaver with our flights over cities. */
+    fun useOurScreensaver(ctx: Context) {
+        val id = "${ctx.packageName}/.AerialDream"
+        shell(ctx, "settings put secure screensaver_enabled 1")
+        shell(ctx, "settings put secure screensaver_components $id")
+        shell(ctx, "settings put secure screensaver_default_component $id")
+        shell(ctx, "settings put secure screensaver_activate_on_sleep 1")
+    }
+
     /** Silent install (used for updates). The app restarts itself afterwards. */
     @Synchronized
     fun install(ctx: Context, apk: File): Boolean {
@@ -173,6 +182,7 @@ object Adb {
         shell(ctx, "settings put global auto_time_zone 0")
         shell(ctx, "service call alarm 3 s16 Europe/Chisinau")
         shell(ctx, "setprop persist.sys.timezone Europe/Chisinau")
+        useOurScreensaver(ctx)
         nameAirPlay(ctx)
         airplayReady(ctx)
         return true

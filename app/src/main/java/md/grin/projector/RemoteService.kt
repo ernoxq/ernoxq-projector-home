@@ -31,6 +31,7 @@ class RemoteService : Service() {
         SleepTimer.start(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
         updates.postDelayed(airplayWatch, 30_000)
+        updates.postDelayed(aerialWatch, 30_000)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
     }
 
@@ -39,7 +40,7 @@ class RemoteService : Service() {
     /** Checks GitHub for a newer build a minute after start, then every 6 hours. */
     private val updateCheck = object : Runnable {
         override fun run() {
-            val quiet = App.isForeground && SleepTimer.idleMs() > 5 * 60_000L && Media.current(applicationContext)?.playing != true
+            val quiet = (App.isForeground || Aerials.showing) && SleepTimer.idleMs() > 5 * 60_000L && Media.current(applicationContext)?.playing != true
             if (quiet) {
                 Thread { Updater.check(applicationContext) }.start()
                 updates.postDelayed(this, 6 * 60 * 60_000L)
@@ -57,7 +58,7 @@ class RemoteService : Service() {
     @Volatile private var airplaySession = false
     private val airplayWatch = object : Runnable {
         override fun run() {
-            if (!App.isForeground && Apps.isInstalled(applicationContext, Apps.AIRPLAY)) {
+            if (!App.isForeground && !Aerials.showing && Apps.isInstalled(applicationContext, Apps.AIRPLAY)) {
                 Thread {
                     val ctx = applicationContext
                     val n = Adb.run(ctx, "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk 'toupper(\$2) ~ /:1B58\$/ && \$4==\"01\"' | wc -l")
@@ -74,6 +75,16 @@ class RemoteService : Service() {
                 airplaySession = false
             }
             updates.postDelayed(this, 4_000)
+        }
+    }
+
+    /** Home screen left alone for 3 minutes with nothing playing: the screensaver comes on. */
+    private val aerialWatch = object : Runnable {
+        override fun run() {
+            val ctx = applicationContext
+            if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS &&
+                Media.current(ctx)?.playing != true) Aerials.show(ctx)
+            updates.postDelayed(this, 15_000)
         }
     }
 

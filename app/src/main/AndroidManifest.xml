@@ -50,6 +50,27 @@
             android:exported="false"
             android:screenOrientation="landscape" />
 
+        <activity
+            android:name=".AerialActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:screenOrientation="landscape"
+            android:theme="@style/Saver" />
+
+        <service
+            android:name=".AerialDream"
+            android:exported="true"
+            android:label="Projector Home: города мира"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".RemoteService"
             android:exported="false" />

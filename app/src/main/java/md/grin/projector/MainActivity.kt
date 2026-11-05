@@ -122,6 +122,7 @@ class MainActivity : Activity() {
     override fun onBackPressed() {}
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        SleepTimer.touch()
         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0 &&
             (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)) Sounds.select()
         return super.dispatchKeyEvent(event)
@@ -467,6 +468,8 @@ class MainActivity : Activity() {
                 "Яркость: $level% — изменить (плавно — ползунком на айфоне)",
                 if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
                 if (SleepTimer.isOn(this)) "Сон после 23:00 (30 мин без нажатий): включён — выключить" else "Сон после 23:00: выключен — включить",
+                "Показать заставку",
+                if (Aerials.isOn(this)) "Заставка через 3 мин на главном экране: включена — выключить" else "Заставка на главном экране: выключена — включить",
                 "Настройки проектора",
                 "Выбрать клавиатуру вручную",
             )) { _, i ->
@@ -486,8 +489,14 @@ class MainActivity : Activity() {
                         SleepTimer.setOn(this, on)
                         android.widget.Toast.makeText(this, if (on) "Сон после 23:00 включён" else "Сон выключен", android.widget.Toast.LENGTH_SHORT).show()
                     }
-                    3 -> Apps.openSettings(this)
+                    3 -> Aerials.show(this)
                     4 -> {
+                        val on = !Aerials.isOn(this)
+                        Aerials.setOn(this, on)
+                        android.widget.Toast.makeText(this, if (on) "Заставка включена" else "Заставка выключена", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    5 -> Apps.openSettings(this)
+                    6 -> {
                         // System picker: choose "Projector Home". If it isn't listed, open the list of keyboards to switch it on.
                         try {
                             Thread { Adb.useOurKeyboard(applicationContext) }.start()

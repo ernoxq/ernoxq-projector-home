@@ -10,6 +10,10 @@
         <item name="android:defaultFocusHighlightEnabled">false</item>
     </style>
 
+    <style name="Saver" parent="Home">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
     <style name="HomeAnim" parent="@android:style/Animation.Activity">
         <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
         <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>

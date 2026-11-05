@@ -29,6 +29,13 @@ jobs:
           curl -fsSL -o app/src/main/assets/fonts/InterTight.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/intertight/InterTight%5Bwght%5D.ttf" || echo "font download failed, using system font"
           curl -fsSL -o app/src/main/assets/fonts/InterTight-Italic.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/intertight/InterTight-Italic%5Bwght%5D.ttf" || echo "italic font download failed"
 
+      - name: Check screensaver video links
+        continue-on-error: true
+        run: |
+          jq -r '.[].url' app/src/main/assets/aerials.json | while read -r u; do
+            echo "$(curl -sIL -A 'Mozilla/5.0' --max-time 20 -o /dev/null -w '%{http_code} %header{content-type} %header{content-length}' "$u") $u"
+          done
+
       - name: Build launcher
         run: gradle :app:assembleRelease --stacktrace
 

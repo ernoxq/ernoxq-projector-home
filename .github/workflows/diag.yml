@@ -1,0 +1,17 @@
+name: diag
+on:
+  push:
+    branches: [diag]
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          U='https://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N008_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov'
+          echo "--- https"; curl -sSIL -A Mozilla/5.0 --max-time 25 "$U" 2>&1 | head -20
+          echo "--- https -k"; curl -skIL -A Mozilla/5.0 --max-time 25 "$U" 2>&1 | head -20
+          H=${U/https:/http:}
+          echo "--- http"; curl -sSIL -A Mozilla/5.0 --max-time 25 "$H" 2>&1 | head -20
+          echo "--- range"; curl -sS -r 0-1000 -o /dev/null -w '%{http_code} %{size_download}\n' --max-time 25 "$U" 2>&1
+          echo "--- cert"; echo | timeout 20 openssl s_client -connect sylvan.apple.com:443 -servername sylvan.apple.com -showcerts 2>/dev/null | grep -E '^ *[0-9]+ s:|i:|Verif' | head -20
+          echo "--- dns"; getent hosts sylvan.apple.com; dig +short sylvan.apple.com || true

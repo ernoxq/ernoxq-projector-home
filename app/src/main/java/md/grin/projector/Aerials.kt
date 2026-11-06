@@ -56,6 +56,13 @@ object Aerials {
     private val recent = ArrayDeque<String>()
     private var lastPlace = ""
     @Volatile private var downloading = false
+    /** What the downloader is doing, for the screen while no flight is showing yet. */
+    @Volatile var stored = 0
+        private set
+    @Volatile var total = 0
+        private set
+    @Volatile var currentPercent = -1
+        private set
 
     fun isOn(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("aerials", true)
     fun setOn(ctx: Context, on: Boolean) { ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putBoolean("aerials", on).apply() }
@@ -195,8 +202,10 @@ object Aerials {
             try {
                 var fails = 0
                 while (showing && fails < 3) {
-                    val missing = pool(ctx).filter { !file(ctx, it).exists() }
-                    val storedCount = pool(ctx).size - missing.size
+                    val missing = all(ctx).filter { !file(ctx, it).exists() }
+                    val storedCount = all(ctx).size - missing.size
+                    stored = storedCount
+                    total = all(ctx).size
                     // Little stored yet: the lightest flights first, so a picture shows up soon.
                     val todo = (if (storedCount < 4) missing.minByOrNull { it.mb } else missing.randomOrNull()) ?: break
                     if (!makeRoom(ctx)) break
@@ -240,6 +249,7 @@ object Aerials {
         }
         val append = conn.responseCode == 206
         val total = conn.contentLengthLong + if (append) part.length() else 0
+        currentPercent = 0
         var done = false
         try {
             conn.inputStream.use { input ->
@@ -249,14 +259,16 @@ object Aerials {
                         val n = input.read(buf)
                         if (n < 0) { done = true; break }
                         out.write(buf, 0, n)
-                        // While music plays, save slowly (about 2.5 Mbit/s) so the music keeps its share of the Wi‑Fi.
-                        if (musicOn(ctx)) SystemClock.sleep(200)
+                        // While music plays, save at about 6 Mbit/s so the music keeps its share of the Wi‑Fi.
+                        if (musicOn(ctx)) SystemClock.sleep(80)
+                        if (total > 0) currentPercent = ((part.length() * 100) / total.coerceAtLeast(1)).toInt().coerceIn(0, 99)
                     }
                 }
             }
         } finally { conn.disconnect() }
         // Left unfinished: the part stays and continues next time.
-        if (done && (total <= 0 || part.length() == total)) part.renameTo(to)
+        if (done && (total <= 0 || part.length() == total)) { part.renameTo(to); stored++ }
+        currentPercent = -1
     }
 }
 
@@ -269,6 +281,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val place: TextView
     private val clock: TextView
     private val nowPlaying: NowPlayingCard
+    private val status: TextView
     private val mediaChanged: () -> Unit = { keepMusic(); refreshCard() }
 
     private var musicWasOn = false
@@ -334,6 +347,15 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         addView(labels, LayoutParams(Ui.px(560), Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
             leftMargin = Ui.px(48); bottomMargin = Ui.px(38)
         })
+        // Shown only while no flight is on screen yet: tells that the library is being prepared.
+        status = caption(15, 600).apply {
+            gravity = Gravity.CENTER
+            background = Glass.panel(22)
+            setPadding(Ui.px(20), 0, Ui.px(20), 0)
+            setShadowLayer(0f, 0f, 0f, 0)
+            alpha = 0f
+        }
+        addView(status, LayoutParams(Ui.WRAP, Ui.px(44), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = Ui.px(36) })
         nowPlaying = NowPlayingCard(ctx)
         addView(nowPlaying, LayoutParams(Ui.px(290), Ui.WRAP, Gravity.TOP or Gravity.END).apply {
             topMargin = Ui.px(32); rightMargin = Ui.px(32)
@@ -491,6 +513,19 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         main.postDelayed(nextClip, 400)
     }
 
+    /** "Готовлю заставку · сохранено 3 из 20 · 45 %" while there is no picture yet. */
+    private fun showStatus() {
+        val noPicture = !revealed
+        val want = noPicture && player == null
+        if (want) {
+            val pct = Aerials.currentPercent
+            val t = "Готовлю заставку · сохранено ${Aerials.stored} из ${Aerials.total.takeIf { it > 0 } ?: 20}" + (if (pct >= 0) " · следующий город $pct %" else "")
+            if (status.text.toString() != t) status.text = t
+        }
+        val a = if (want) 1f else 0f
+        if (status.alpha != a && status.animate() != null) status.animate().alpha(a).setDuration(500).start()
+    }
+
     private fun reveal(c: Clip) {
         fails = 0
         place.text = c.place
@@ -521,6 +556,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             val t = timeFmt.format(Clock.now())
             // Setting the same text again would still re-measure the screen over the playing video.
             if (clock.text.toString() != t) clock.text = t
+            showStatus()
             keepMusic()
             refreshCard()
             syncLabels()

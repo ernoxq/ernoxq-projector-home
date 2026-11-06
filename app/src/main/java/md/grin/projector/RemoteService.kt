@@ -30,7 +30,10 @@ class RemoteService : Service() {
         Thread { Picture.restore(applicationContext) }.start()
         Aerials.trim(applicationContext)
         SleepTimer.start(applicationContext)
+        Apps.detectAirplay(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
+        // Our own AirPlay receiver: put in place (or updated) soon after start, not only with the 6-hour check.
+        updates.postDelayed({ Thread { Updater.checkReceiver(applicationContext) }.start() }, 45_000)
         // Right after a start or an update: our home screen stays the default, the firmware's update nag stays off.
         updates.postDelayed({ Thread { Adb.quietSystem(applicationContext) }.start() }, 3_000)
         updates.postDelayed(airplayWatch, 30_000)

@@ -241,18 +241,23 @@ object Adb {
      * connects (Android 11 needs the "draw over other apps" permission for that, which the projector's
      * settings menu doesn't offer), keeps running in the background, and is started if it isn't running.
      */
+    // The receiver's classes keep their original names in both builds, so components are named in full.
+    private const val AIR_CLS = "io.github.jqssun.airplay"
+    private fun airSet(air: String, key: String, value: String) =
+        "am broadcast -a $AIR_CLS.SET_SETTING -n $air/$AIR_CLS.SettingsReceiver --es key $key --es value '$value'"
+
     fun airplayReady(ctx: Context) {
-        if (!Apps.isInstalled(ctx, Apps.AIRPLAY)) return
-        val air = Apps.AIRPLAY
+        val air = Apps.detectAirplay(ctx)
+        if (Apps.installedVersion(ctx, air) < 0) return
         if (!shell(ctx, "appops set $air SYSTEM_ALERT_WINDOW allow")) return
         shell(ctx, "dumpsys deviceidle whitelist +$air")
         for ((k, v) in listOf("auto_start" to "true", "boot_auto_start" to "true", "run_in_background" to "true", "auto_fullscreen" to "true")) {
-            shell(ctx, "am broadcast -a $air.SET_SETTING -n $air/.SettingsReceiver --es key $k --es value $v")
+            shell(ctx, airSet(air, k, v))
         }
         val running = run(ctx, "pidof $air")?.trim().orEmpty().isNotEmpty()
         if (!running) {
             // Opening the receiver once starts its background service; then come straight back home.
-            shell(ctx, "am start -n $air/.MainActivity")
+            shell(ctx, "am start -n $air/$AIR_CLS.MainActivity")
             Thread.sleep(2500)
             shell(ctx, "input keyevent 3")
         }
@@ -264,15 +269,15 @@ object Adb {
      */
     fun nameAirPlay(ctx: Context, name: String = "AirPlay") {
         val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
-        if (prefs.getString("airplay_name", null) == name) return
-        if (!Apps.isInstalled(ctx, Apps.AIRPLAY)) return
-        val air = Apps.AIRPLAY
-        val ok = shell(ctx, "am broadcast -a $air.SET_SETTING -n $air/.SettingsReceiver --es key server_name --es value '$name'")
+        val air = Apps.detectAirplay(ctx)
+        if (prefs.getString("airplay_name_$air", null) == name) return
+        if (Apps.installedVersion(ctx, air) < 0) return
+        val ok = shell(ctx, airSet(air, "server_name", name))
         if (!ok) return
         shell(ctx, "am force-stop $air")
-        shell(ctx, "am start -n $air/.MainActivity")
+        shell(ctx, "am start -n $air/$AIR_CLS.MainActivity")
         Thread.sleep(2500)
         shell(ctx, "input keyevent 3")
-        prefs.edit().putString("airplay_name", name).apply()
+        prefs.edit().putString("airplay_name_$air", name).apply()
     }
 }

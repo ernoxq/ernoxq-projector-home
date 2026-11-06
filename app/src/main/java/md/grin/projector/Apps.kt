@@ -21,13 +21,29 @@ data class TileSpec(
 
 /** Finding and opening apps. Works the same for the home screen and the phone remote. */
 object Apps {
-    const val AIRPLAY = "io.github.jqssun.airplay"
+    /** Our own AirPlay receiver (built from airplay/ in this repository) and the stock one it replaces. */
+    const val AIRPLAY_OWN = "md.grin.airplay"
+    const val AIRPLAY_STOCK = "io.github.jqssun.airplay"
+    /** The receiver version this build of Projector Home brings along (airplay/VERSION). */
+    const val AIRPLAY_BUILD = 1001L
+    /** Which receiver is on the projector right now. */
+    @Volatile var AIRPLAY = AIRPLAY_STOCK
+        private set
+
+    fun detectAirplay(ctx: Context): String {
+        val own = try { ctx.packageManager.getPackageInfo(AIRPLAY_OWN, 0); true } catch (_: Exception) { false }
+        AIRPLAY = if (own) AIRPLAY_OWN else AIRPLAY_STOCK
+        return AIRPLAY
+    }
+
+    fun installedVersion(ctx: Context, pkg: String): Long =
+        try { ctx.packageManager.getPackageInfo(pkg, 0).longVersionCode } catch (_: Exception) { -1L }
 
     val tiles = listOf(
         TileSpec("youtube", "YouTube", "Видео", listOf("com.google.android.youtube.tv", "com.google.android.youtube", "com.liskovsoft.smarttubetv.beta", "com.teamsmart.videomanager.tv"), listOf("youtube"), fallbackIcon = R.drawable.ic_video),
         TileSpec("netflix", "Netflix", "Фильмы и сериалы", listOf("com.netflix.ninja", "com.netflix.mediaclient"), listOf("netflix"), fallbackIcon = R.drawable.ic_film),
         TileSpec("spotify", "Spotify", "Музыка", listOf("com.spotify.tv.android", "com.spotify.music"), listOf("spotify"), fallbackIcon = R.drawable.ic_music),
-        TileSpec("cast", "Трансляция", "iPhone и Mac", listOf(AIRPLAY, "com.ionitech.airscreen"), listOf("airplay", "airscreen", "mirror", "cast"), dark = true, fallbackIcon = R.drawable.ic_cast),
+        TileSpec("cast", "Трансляция", "iPhone и Mac", listOf(AIRPLAY_OWN, AIRPLAY_STOCK, "com.ionitech.airscreen"), listOf("airplay", "airscreen", "mirror", "cast"), dark = true, fallbackIcon = R.drawable.ic_cast),
         TileSpec("hdmi", "HDMI", "Внешний вход", emptyList(), listOf("hdmi", "source", "signal", "input", "tvinput"), fallbackIcon = R.drawable.ic_hdmi),
         TileSpec("browser", "Браузер", "Сайты и поиск", listOf("com.phlox.tvwebbrowser", "com.android.chrome", "org.mozilla.firefox", "com.opera.browser", "com.android.browser", "com.cloudmosa.puffinTV"), listOf("browser", "браузер", "chrome", "firefox"), fallbackIcon = R.drawable.ic_globe),
     )

@@ -180,6 +180,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("warm", Picture.isWarm(ctx))
             .put("npCard", Aerials.cardOn(ctx))
             .put("aerial", Aerials.showing)
+            .put("version", "1.0.${Updater.currentBuild(ctx)}")
+            .put("updateStatus", Updater.status)
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

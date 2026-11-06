@@ -23,6 +23,8 @@ object Updater {
 
     fun currentBuild(ctx: Context): Long = ctx.packageManager.getPackageInfo(ctx.packageName, 0).longVersionCode
 
+    @Volatile private var receiverUrl: String? = null
+
     private fun latest(): Pair<Int, String>? = try {
         val c = URL("https://api.github.com/repos/$REPO/releases/latest").openConnection() as HttpURLConnection
         c.connectTimeout = 10_000
@@ -36,6 +38,7 @@ object Updater {
         for (i in 0 until assets.length()) {
             val a = assets.getJSONObject(i)
             if (a.getString("name") == "projector-home.apk") url = a.getString("browser_download_url")
+            if (a.getString("name") == "airplay-receiver.apk") receiverUrl = a.getString("browser_download_url")
         }
         url?.let { build to it }
     } catch (e: Exception) {
@@ -51,7 +54,8 @@ object Updater {
             val (build, url) = latest() ?: run { status = "Нет связи с GitHub"; return false }
             if (build <= currentBuild(ctx)) {
                 status = "Стоит последняя версия (1.0.${currentBuild(ctx)})"
-                return false
+                busy = false
+                return checkReceiver(ctx)
             }
             status = "Скачиваю версию 1.0.$build…"
             val dir = ctx.getExternalFilesDir(null) ?: ctx.cacheDir
@@ -67,6 +71,53 @@ object Updater {
         } finally {
             busy = false
         }
+    }
+
+    @Volatile private var receiverBusy = false
+
+    /**
+     * Our own AirPlay receiver (dark, Apple TV-style, music in the background) comes with each release.
+     * Installed when this projector has an older one or the stock receiver; the stock one is then removed
+     * and the new one is named "AirPlay" and started. Skipped while someone is using AirPlay.
+     */
+    fun checkReceiver(ctx: Context): Boolean {
+        if (receiverBusy) return false
+        receiverBusy = true
+        try {
+            val have = Apps.installedVersion(ctx, Apps.AIRPLAY_OWN)
+            if (have >= Apps.AIRPLAY_BUILD) { retireStock(ctx); return false }
+            if (Apps.foreground(ctx)?.let { it == Apps.AIRPLAY_OWN || it == Apps.AIRPLAY_STOCK } == true) return false
+            if (receiverUrl == null) latest()
+            val url = receiverUrl ?: return false
+            status = "Скачиваю новый AirPlay…"
+            val dir = ctx.getExternalFilesDir(null) ?: ctx.cacheDir
+            val file = File(dir, "airplay.apk")
+            download(url, file)
+            status = "Устанавливаю новый AirPlay…"
+            if (!Adb.install(ctx, file)) { status = "Не удалось поставить новый AirPlay: ${Adb.lastError}"; return false }
+            file.delete()
+            Apps.invalidate()
+            retireStock(ctx)
+            Adb.airplayReady(ctx)
+            Adb.nameAirPlay(ctx)
+            status = "Новый AirPlay установлен"
+            return true
+        } catch (e: Exception) {
+            status = "Не удалось обновить AirPlay: ${e.message}"
+            return false
+        } finally {
+            receiverBusy = false
+        }
+    }
+
+    /** Once our receiver is in place, the stock one goes, so only one "AirPlay" shows on the iPhone. */
+    private fun retireStock(ctx: Context) {
+        if (Apps.installedVersion(ctx, Apps.AIRPLAY_OWN) < 0) return
+        if (Apps.installedVersion(ctx, Apps.AIRPLAY_STOCK) >= 0) {
+            Adb.shell(ctx, "pm uninstall ${Apps.AIRPLAY_STOCK}")
+            Apps.invalidate()
+        }
+        Apps.detectAirplay(ctx)
     }
 
     private fun download(url: String, to: File) {

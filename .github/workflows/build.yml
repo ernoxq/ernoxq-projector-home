@@ -9,7 +9,64 @@ permissions:
   contents: write
 
 jobs:
+  # Projector Home's own AirPlay receiver: the open-source receiver (jqssun/android-airplay-server, GPL-3.0)
+  # with our patches from airplay/. Built only when airplay/ changes; otherwise the cached APK is reused.
+  # If it fails, the launcher is still released (the projector keeps the receiver it has).
+  receiver:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upstream version
+        id: up
+        run: echo "sha=$(cat airplay/UPSTREAM)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: rx-out
+          key: receiver-${{ hashFiles('airplay/**') }}
+
+      - uses: actions/checkout@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          repository: jqssun/android-airplay-server
+          ref: ${{ steps.up.outputs.sha }}
+          path: rx
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build receiver
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          python3 airplay/patch.py rx "$(cat airplay/VERSION)"
+          cat > rx/local.properties <<PROPS
+          storeFile=$GITHUB_WORKSPACE/keystore/release.jks
+          storePassword=grinhome
+          keyAlias=grin
+          keyPassword=grinhome
+          PROPS
+          sed -i 's/^ *//' rx/local.properties
+          cd rx
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --stacktrace
+          mkdir -p ../rx-out
+          cp app/build/outputs/apk/release/app-release.apk ../rx-out/airplay-receiver.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: receiver
+          path: rx-out/airplay-receiver.apk
+
   build:
+    needs: receiver
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,15 +96,17 @@ jobs:
       - name: Build launcher
         run: gradle :app:assembleRelease --stacktrace
 
-      - name: Collect APKs (launcher + AirPlay receiver)
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: receiver
+          path: rx-out
+
+      - name: Collect APKs (launcher + our AirPlay receiver)
         run: |
           mkdir -p out
           cp app/build/outputs/apk/release/app-release.apk out/projector-home.apk
-          gh release download -R jqssun/android-airplay-server -p "*.apk" -D airplay || true
-          f=$(ls airplay/*.apk 2>/dev/null | head -1)
-          if [ -n "$f" ]; then cp "$f" out/airplay-receiver.apk; else echo "AirPlay receiver APK not found"; fi
+          if [ -f rx-out/airplay-receiver.apk ]; then cp rx-out/airplay-receiver.apk out/airplay-receiver.apk; else echo "AirPlay receiver not built this time"; fi
           ls -la out
 
       - uses: actions/upload-artifact@v4

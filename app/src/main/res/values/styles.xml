@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ground">#C9D3EA</color>
+    <!-- The room behind the glass: what Android shows for a split second while a screen opens.
+         It used to be the old light-blue, which flashed between apps. -->
+    <color name="ground">#2E2924</color>
 
     <style name="Home" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
         <item name="android:windowBackground">@color/ground</item>

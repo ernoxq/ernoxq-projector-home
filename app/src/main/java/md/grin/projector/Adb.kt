@@ -20,17 +20,32 @@ object App {
 object Adb {
     private const val TAG = "Adb"
     private val ports = listOf(5555)
-    private var dadb: Dadb? = null
+    @Volatile private var dadb: Dadb? = null
     @Volatile var lastError: String? = null
         private set
     @Volatile var connected = false
         private set
 
-    @Synchronized
+    /**
+     * One shared connection. Only connecting is locked: commands run side by side over it,
+     * so a slow command never holds up a key press from the phone.
+     */
+    private fun conn(ctx: Context): Dadb? = dadb ?: synchronized(this) { dadb ?: connect(ctx) }
+
+    private fun drop(d: Dadb?) {
+        synchronized(this) {
+            if (d != null && dadb !== d) return
+            try { dadb?.close() } catch (_: Throwable) {}
+            dadb = null
+            connected = false
+        }
+    }
+
     fun shell(ctx: Context, cmd: String): Boolean {
         repeat(2) {
+            var d: Dadb? = null
             try {
-                val d = dadb ?: connect(ctx) ?: return false
+                d = conn(ctx) ?: return false
                 val r = d.shell(cmd)
                 connected = true
                 if (r.exitCode != 0) Log.w(TAG, "$cmd -> ${r.exitCode} ${r.allOutput}")
@@ -38,18 +53,15 @@ object Adb {
             } catch (e: Throwable) {
                 lastError = e.message ?: e.javaClass.simpleName
                 Log.w(TAG, "shell failed: $lastError")
-                try { dadb?.close() } catch (_: Throwable) {}
-                dadb = null
-                connected = false
+                drop(d)
             }
         }
         return false
     }
 
     /** Runs a command and returns what it printed (null if ADB isn't available). */
-    @Synchronized
     fun run(ctx: Context, cmd: String): String? = try {
-        (dadb ?: connect(ctx))?.shell(cmd)?.allOutput
+        conn(ctx)?.shell(cmd)?.allOutput
     } catch (e: Throwable) {
         lastError = e.message
         null
@@ -61,7 +73,6 @@ object Adb {
      * Key presses go through one shell that stays open, and we don't wait for each command to finish.
      * That removes the per-press connection setup, so the phone touchpad feels much quicker.
      */
-    @Synchronized
     fun key(ctx: Context, code: Int): Boolean =
         writeLive(ctx, "$code") || shell(ctx, "input keyevent $code")
 
@@ -69,10 +80,12 @@ object Adb {
     fun chars(ctx: Context, text: String): Boolean =
         writeLive(ctx, "t " + java.net.URLEncoder.encode(text, "UTF-8"))
 
-    @Synchronized
+    private val liveLock = Any()
+
     private fun writeLive(ctx: Context, line: String): Boolean {
+        synchronized(liveLock) {
         try {
-            val s = live ?: (dadb ?: connect(ctx))?.openShell()?.also {
+            val s = live ?: conn(ctx)?.openShell()?.also {
                 live = it
                 // Start the fast injector from this app's own APK. If it can't start on this firmware,
                 // fall back to a loop that reads the same key codes and uses the standard `input` tool.
@@ -86,6 +99,7 @@ object Adb {
             live = null
         }
         return false
+        }
     }
 
     /**
@@ -119,10 +133,9 @@ object Adb {
     }
 
     /** Silent install (used for updates). The app restarts itself afterwards. */
-    @Synchronized
     fun install(ctx: Context, apk: File): Boolean {
         return try {
-            val d = dadb ?: connect(ctx) ?: return false
+            val d = conn(ctx) ?: return false
             d.install(apk, "-r")
             true
         } catch (e: Throwable) {
@@ -167,6 +180,8 @@ object Adb {
         if (!shell(ctx, "echo ok")) return false
         shell(ctx, "cmd notification allow_listener $pkg/$pkg.MediaListener")
         shell(ctx, "appops set $pkg SYSTEM_ALERT_WINDOW allow")
+        // Lets the remote know which app is on screen without the heavy `dumpsys`.
+        shell(ctx, "appops set $pkg GET_USAGE_STATS allow")
         shell(ctx, "cmd package set-home-activity $pkg/$pkg.MainActivity")
         shell(ctx, "settings put global window_animation_scale 0.5")
         shell(ctx, "settings put global transition_animation_scale 0.5")

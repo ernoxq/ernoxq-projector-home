@@ -42,8 +42,9 @@ data class Clip(val place: String, val country: String, val tod: String, val url
  */
 object Aerials {
     const val IDLE_MS = 3 * 60_000L
-    private const val CACHE_LIMIT = 4L * 1024 * 1024 * 1024
-    private const val MIN_FREE = 1536L * 1024 * 1024
+    // Kept modest: a nearly full flash drive makes the whole projector slow, not just the screensaver.
+    private const val CACHE_LIMIT = 1536L * 1024 * 1024
+    private const val MIN_FREE = 3L * 1024 * 1024 * 1024
     private const val UA = "Mozilla/5.0 (Linux; Android 11) ProjectorHome"
     val headers = mapOf("User-Agent" to UA)
 
@@ -98,6 +99,11 @@ object Aerials {
         startDownloads(ctx.applicationContext)
     }
 
+    /** Frees space taken by older, bigger collections. Runs once in the background at start. */
+    fun trim(ctx: Context) {
+        Thread({ try { makeRoom(ctx.applicationContext) } catch (_: Exception) {} }, "aerial-trim").apply { priority = Thread.MIN_PRIORITY }.start()
+    }
+
     fun leave() { active.decrementAndGet() }
 
     private val ui = Handler(Looper.getMainLooper())
@@ -138,7 +144,7 @@ object Aerials {
         }, "aerial-download").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
-    /** Keeps at least 1.5 GB free and the collection under 4 GB, dropping what was played longest ago. */
+    /** Keeps at least 3 GB free and the collection under 1.5 GB, dropping what was played longest ago. */
     private fun makeRoom(ctx: Context): Boolean {
         val d = dir(ctx)
         while (true) {
@@ -409,7 +415,9 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
-            clock.text = timeFmt.format(Clock.now())
+            val t = timeFmt.format(Clock.now())
+            // Setting the same text again would still re-measure the screen over the playing video.
+            if (clock.text.toString() != t) clock.text = t
             nowPlaying.update(Media.current(context))
             syncLabels()
             val p = player

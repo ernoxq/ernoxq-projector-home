@@ -1,6 +1,5 @@
 package md.grin.projector
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -10,7 +9,6 @@ import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -29,7 +27,7 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
     private val artist: TextView
     private val elapsed: TextView
     private val remaining: TextView
-    private val bar = Progress(ctx)
+    private val bar = RoundBar(ctx, 0x40FFFFFF, Color.WHITE)
     private val eq = Equalizer(ctx)
     private var lastArt: Bitmap? = null
     var shown = false
@@ -72,11 +70,12 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         addView(bar, Ui.lp(Ui.MATCH, Ui.px(3)).apply { topMargin = Ui.px(10) })
 
         elapsed = Ui.text(ctx, "0:00", 10, 600, 0x99FFFFFF.toInt())
-        remaining = Ui.text(ctx, "", 10, 600, 0x99FFFFFF.toInt())
+        remaining = Ui.text(ctx, "", 10, 600, 0x99FFFFFF.toInt()).apply { gravity = Gravity.END }
+        // Fixed widths: the times tick every second without re-measuring the card.
         val times = Ui.row(ctx).apply {
-            addView(elapsed)
+            addView(elapsed, Ui.lp(Ui.px(60), Ui.WRAP))
             addView(Ui.flex(ctx))
-            addView(remaining)
+            addView(remaining, Ui.lp(Ui.px(60), Ui.WRAP))
         }
         addView(times, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(4) })
     }
@@ -84,8 +83,9 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
     /** Shows the card for what's playing, hides it when nothing is. */
     fun update(np: NowPlaying?) {
         if (np == null || !np.playing) { hide(); return }
-        title.text = np.title
-        artist.text = np.artist.ifEmpty { np.source }
+        // Text is only touched when it really changes: every change re-measures the card over the video.
+        set(title, np.title)
+        set(artist, np.artist.ifEmpty { np.source })
         if (np.art !== lastArt) {
             lastArt = np.art
             art.setImageBitmap(np.art)
@@ -95,8 +95,8 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
             val pos = np.position.coerceAtMost(np.duration)
             bar.visibility = View.VISIBLE
             bar.fraction = pos.toFloat() / np.duration
-            elapsed.text = mmss(pos)
-            remaining.text = "−" + mmss(np.duration - pos)
+            set(elapsed, mmss(pos))
+            set(remaining, "−" + mmss(np.duration - pos))
             (elapsed.parent as View).visibility = View.VISIBLE
         } else {
             // Radio and live streams have no length.
@@ -124,50 +124,37 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         animate().alpha(0f).translationY(-Ui.pxf(10)).setDuration(500).withEndAction { if (!shown) visibility = View.GONE }.start()
     }
 
+    private fun set(v: TextView, s: String) { if (v.text.toString() != s) v.text = s }
+
     private fun mmss(ms: Long): String {
         val s = (ms / 1000).coerceAtLeast(0)
         return if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s / 60 % 60, s % 60) else "%d:%02d".format(s / 60, s % 60)
     }
 
-    /** Thin rounded track with a white fill. */
-    private class Progress(ctx: Context) : View(ctx) {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val r = RectF()
-        var fraction = 0f
-            set(v) { field = v.coerceIn(0f, 1f); invalidate() }
-
-        override fun onDraw(c: Canvas) {
-            val h = height.toFloat()
-            r.set(0f, 0f, width.toFloat(), h)
-            paint.color = 0x40FFFFFF
-            c.drawRoundRect(r, h / 2, h / 2, paint)
-            r.right = width * fraction
-            if (r.right > 0) {
-                paint.color = Color.WHITE
-                c.drawRoundRect(r, h / 2, h / 2, paint)
-            }
-        }
-    }
 
     /** The four little bars that bounce while music plays. */
     private class Equalizer(ctx: Context) : View(ctx) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
         private val r = RectF()
         private var t = 0f
-        private val anim = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 1000
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-            addUpdateListener { t += 0.016f; invalidate() }
+        // About 20 frames a second is plenty for four little bars, and costs a third of a full-rate animation.
+        private val frame = object : Runnable {
+            override fun run() {
+                if (!running) return
+                t += 0.05f
+                invalidate()
+                postDelayed(this, 50)
+            }
         }
         var running = false
             set(v) {
                 if (field == v) return
                 field = v
-                if (v) anim.start() else { anim.cancel(); invalidate() }
+                removeCallbacks(frame)
+                if (v) post(frame) else invalidate()
             }
 
-        override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
+        override fun onDetachedFromWindow() { removeCallbacks(frame); super.onDetachedFromWindow() }
 
         override fun onDraw(c: Canvas) {
             val n = 4
@@ -180,6 +167,34 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
                 r.set(left, h - h * level, left + w, h)
                 c.drawRoundRect(r, w / 2, w / 2, paint)
             }
+        }
+    }
+}
+
+/**
+ * A thin rounded progress bar drawn in one go. Moving it only repaints this strip;
+ * resizing a child view instead would re-measure the whole screen every second.
+ */
+class RoundBar(ctx: Context, private val trackColor: Int, private val fillColor: Int) : View(ctx) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val r = RectF()
+    var fraction = 0f
+        set(v) {
+            val n = v.coerceIn(0f, 1f)
+            if (kotlin.math.abs(n - field) * width < 0.5f && n != 0f) { field = n; return }
+            field = n
+            invalidate()
+        }
+
+    override fun onDraw(c: Canvas) {
+        val h = height.toFloat()
+        r.set(0f, 0f, width.toFloat(), h)
+        paint.color = trackColor
+        c.drawRoundRect(r, h / 2, h / 2, paint)
+        r.right = width * fraction
+        if (r.right > 0) {
+            paint.color = fillColor
+            c.drawRoundRect(r, h / 2, h / 2, paint)
         }
     }
 }

@@ -36,8 +36,7 @@ class MainActivity : Activity() {
     private lateinit var trackArtist: TextView
     private lateinit var trackSource: TextView
     private lateinit var trackTime: TextView
-    private lateinit var progress: View
-    private lateinit var progressTrack: FrameLayout
+    private lateinit var progress: RoundBar
     private lateinit var playIcon: ImageView
     private lateinit var tilesRow: LinearLayout
     private var firstTile: View? = null
@@ -238,13 +237,12 @@ class MainActivity : Activity() {
         trackArtist = Ui.text(this, "Включи музыку в Spotify", 15, 400, Ui.MUTED)
         info.addView(trackArtist, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
         info.addView(Ui.flex(this))
-        progressTrack = FrameLayout(this).apply { background = Ui.round(Ui.TRACK, 3) }
-        progress = View(this).apply { background = Ui.round(Ui.INK, 3) }
-        progressTrack.addView(progress, FrameLayout.LayoutParams(0, MATCH))
-        info.addView(progressTrack, Ui.lp(MATCH, px(5)))
+        progress = RoundBar(this, Ui.TRACK, Ui.INK)
+        info.addView(progress, Ui.lp(MATCH, px(5)))
         val ctrl = Ui.row(this)
         trackTime = Ui.text(this, "", 13, 500, Ui.MUTED)
-        ctrl.addView(trackTime)
+        // A fixed width: the time changes every second, and a text that sizes itself would re-measure the screen each time.
+        ctrl.addView(trackTime, Ui.lp(px(130), WRAP))
         ctrl.addView(Ui.flex(this))
         ctrl.addView(Ui.circleButton(this, R.drawable.ic_prev, 44, Ui.SOFT, iconSize = 16).apply { setOnClickListener { Media.command("prev") } }, Ui.lp(px(44), px(44)))
         val play = Ui.circleButton(this, R.drawable.ic_pause, 52, Ui.ACCENT, Ui.ON_ACCENT, iconSize = 18).apply {
@@ -275,7 +273,8 @@ class MainActivity : Activity() {
                 setPadding(px(20), px(20), px(20), px(20))
                 Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else Ui.INK)
                 setOnClickListener {
-                    Apps.invalidate()
+                    // The app list is refreshed by the install/remove broadcast; re-reading it on every press slowed launches.
+                    if (Apps.resolve(this@MainActivity, spec) == null) Apps.invalidate()
                     if (Apps.resolve(this@MainActivity, spec) == null && spec.key != "hdmi") pickApp(spec)
                     else Apps.launchKey(this@MainActivity, spec.key)
                 }
@@ -347,6 +346,7 @@ class MainActivity : Activity() {
         renderTiles()
         lastMinute = ""
         mediaKey = Unit
+        shownArt = null
         renderMedia()
         Weather.peek()?.let { showWeather(it) }
         firstTile?.requestFocus()
@@ -388,7 +388,7 @@ class MainActivity : Activity() {
         val key = np?.let { listOf(it.title, it.artist, it.playing, it.art) }
         if (key != mediaKey) { renderMedia(); return }
         if (np == null || !np.playing || np.duration <= 0) return
-        trackTime.text = "${fmt(np.position)} / ${fmt(np.duration)}"
+        setTime("${fmt(np.position)} / ${fmt(np.duration)}")
         setProgress(np.position.toFloat() / np.duration)
     }
 
@@ -400,7 +400,7 @@ class MainActivity : Activity() {
             trackSource.text = if (Media.hasAccess(this)) "Сейчас играет" else "Плеер ждёт доступа"
             trackTitle.text = "Ничего не играет"
             trackArtist.text = "Включи музыку в Spotify"
-            trackTime.text = ""
+            setTime("")
             cover.visibility = View.GONE
             playIcon.setImageResource(R.drawable.ic_play)
             setProgress(0f)
@@ -409,17 +409,21 @@ class MainActivity : Activity() {
         trackSource.text = "Сейчас играет · ${np.source}"
         trackTitle.text = np.title
         trackArtist.text = np.artist
-        if (np.art != null) { cover.setImageBitmap(np.art); cover.visibility = View.VISIBLE } else cover.visibility = View.GONE
+        if (np.art != null) {
+            if (np.art !== shownArt) cover.setImageBitmap(np.art)
+            cover.visibility = View.VISIBLE
+        } else cover.visibility = View.GONE
+        shownArt = np.art
         playIcon.setImageResource(if (np.playing) R.drawable.ic_pause else R.drawable.ic_play)
-        trackTime.text = if (np.duration > 0) "${fmt(np.position)} / ${fmt(np.duration)}" else ""
+        setTime(if (np.duration > 0) "${fmt(np.position)} / ${fmt(np.duration)}" else "")
         setProgress(if (np.duration > 0) np.position.toFloat() / np.duration else 0f)
     }
 
-    private fun setProgress(f: Float) {
-        val w = (progressTrack.width * f.coerceIn(0f, 1f)).toInt()
-        val lp = progress.layoutParams
-        if (lp.width != w) { lp.width = w; progress.layoutParams = lp }
-    }
+    private var shownArt: android.graphics.Bitmap? = null
+
+    private fun setProgress(f: Float) { progress.fraction = f }
+
+    private fun setTime(s: String) { if (trackTime.text.toString() != s) trackTime.text = s }
 
     private fun fmt(ms: Long): String { val s = ms / 1000; return "%d:%02d".format(s / 60, s % 60) }
 

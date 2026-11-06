@@ -152,9 +152,41 @@ object Apps {
     }
 
     /** Which app is on screen right now (via ADB), or null. */
+    @Volatile private var fgPkg: String? = null
+    @Volatile private var fgSince = 0L
+    @Volatile private var fgDumpAt = 0L
+
+    /**
+     * Which app is on screen. Read from Android's own usage records: a cheap in-process call, instead of
+     * `dumpsys activity`, which locks the system for a moment and made everything stutter when run every few seconds.
+     */
     fun foreground(ctx: Context): String? {
-        val out = Adb.run(ctx, "dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'") ?: return null
-        return Regex("u0 ([A-Za-z0-9_.]+)/").find(out)?.groupValues?.get(1)
+        fromUsage(ctx)?.let { return it }
+        // No access to usage records yet: the old way, but at most every 10 seconds.
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - fgDumpAt < 10_000) return fgPkg
+        fgDumpAt = now
+        val out = Adb.run(ctx, "dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'") ?: return fgPkg
+        return Regex("u0 ([A-Za-z0-9_.]+)/").find(out)?.groupValues?.get(1).also { fgPkg = it }
+    }
+
+    @Synchronized
+    private fun fromUsage(ctx: Context): String? {
+        val usm = ctx.getSystemService(android.app.usage.UsageStatsManager::class.java) ?: return null
+        val now = System.currentTimeMillis()
+        val from = if (fgSince == 0L) now - 6 * 3600_000L else fgSince - 2_000
+        val events = try { usm.queryEvents(from, now) } catch (_: Exception) { return null } ?: return null
+        val e = android.app.usage.UsageEvents.Event()
+        var any = fgSince != 0L
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            any = true
+            if (e.eventType == android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED) fgPkg = e.packageName
+        }
+        // No events at all on the first read means no access was granted.
+        if (!any) return null
+        fgSince = now
+        return fgPkg
     }
 
     /** Opens an app. Falls back to ADB when Android blocks a start from the background (phone remote). */

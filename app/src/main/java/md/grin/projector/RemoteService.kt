@@ -28,6 +28,7 @@ class RemoteService : Service() {
         Media.attach(applicationContext)
         updates.postDelayed(updateCheck, 60_000)
         Thread { Picture.restore(applicationContext) }.start()
+        Aerials.trim(applicationContext)
         SleepTimer.start(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
         updates.postDelayed(airplayWatch, 30_000)
@@ -56,20 +57,26 @@ class RemoteService : Service() {
      * open closes and the receiver is still on screen, go home.
      */
     @Volatile private var airplaySession = false
+    @Volatile private var airplayBusy = false
     private val airplayWatch = object : Runnable {
         override fun run() {
-            if (!App.isForeground && !Aerials.showing && Apps.isInstalled(applicationContext, Apps.AIRPLAY)) {
+            if (!App.isForeground && !Aerials.showing && !airplayBusy && Apps.isInstalled(applicationContext, Apps.AIRPLAY)) {
+                airplayBusy = true
                 Thread {
-                    val ctx = applicationContext
-                    val n = Adb.run(ctx, "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk 'toupper(\$2) ~ /:1B58\$/ && \$4==\"01\"' | wc -l")
-                        ?.trim()?.toIntOrNull() ?: return@Thread
-                    if (n > 0) {
-                        airplaySession = true
-                    } else if (airplaySession) {
-                        airplaySession = false
-                        val top = Adb.run(ctx, "dumpsys activity activities | grep -m1 -E 'mResumedActivity|topResumedActivity'") ?: ""
-                        if (top.contains(Apps.AIRPLAY)) updates.post { Apps.goHome(ctx) }
-                    }
+                    try {
+                        val ctx = applicationContext
+                        // Only while the receiver itself is on screen: watching YouTube no longer starts
+                        // shell commands on the projector every 4 seconds.
+                        if (Apps.foreground(ctx) != Apps.AIRPLAY) { airplaySession = false; return@Thread }
+                        val n = Adb.run(ctx, "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk 'toupper(\$2) ~ /:1B58\$/ && \$4==\"01\"' | wc -l")
+                            ?.trim()?.toIntOrNull() ?: return@Thread
+                        if (n > 0) {
+                            airplaySession = true
+                        } else if (airplaySession) {
+                            airplaySession = false
+                            updates.post { Apps.goHome(ctx) }
+                        }
+                    } finally { airplayBusy = false }
                 }.start()
             } else if (App.isForeground) {
                 airplaySession = false
@@ -100,6 +107,8 @@ class RemoteService : Service() {
             }
             if (now - lastScan < 10_000) return
             lastScan = now
+            // Who draws the stock volume bar is only a note for the menu: look it up once, not on every press.
+            if (c.getSharedPreferences("home", Context.MODE_PRIVATE).contains("volume_ui")) return
             Thread {
                 Thread.sleep(250)
                 val out = Adb.run(c, "dumpsys window windows | grep -iE -A 8 'Window #.*vol'") ?: return@Thread

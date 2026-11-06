@@ -66,6 +66,34 @@ class SettingsActivity : Activity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         SleepTimer.touch()
         val f = currentFocus
+        // Clear, predictable moves with the remote (Android's own guess jumped between the two columns):
+        //  - in the list: Up/Down go through sections, Right enters the section at its FIRST item;
+        //  - in a section: Up/Down go item by item inside it, never back into the list.
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            val navIdx = sections.indexOfFirst { navRows[it.key] === f }
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_RIGHT -> if (navIdx >= 0) {
+                    firstInDetail()?.let { scroll.scrollTo(0, 0); it.requestFocus() }
+                    return true
+                }
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    val d = if (event.keyCode == KeyEvent.KEYCODE_DPAD_UP) -1 else 1
+                    if (navIdx >= 0) {
+                        navRows[sections[(navIdx + d).coerceIn(0, sections.size - 1)].key]?.requestFocus()
+                        return true
+                    }
+                    if (inDetail(f)) {
+                        val items = detail.getFocusables(View.FOCUS_DOWN)
+                        val next = items.getOrNull(items.indexOf(f) + d)
+                        if (next != null) {
+                            next.requestFocus()
+                            if (items.indexOf(next) == 0) scroll.smoothScrollTo(0, 0)
+                        } else if (d < 0) scroll.smoothScrollTo(0, 0)
+                        return true
+                    }
+                }
+            }
+        }
         if (event.action == KeyEvent.ACTION_DOWN && inDetail(f)) {
             // Leaving a section with Left or Back lands on that section in the list, not on a neighbour.
             val leave = when (event.keyCode) {

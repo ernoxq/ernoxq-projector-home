@@ -97,15 +97,12 @@ class RemoteService : Service() {
         }
     }
 
-    /**
-     * Home screen left alone for 3 minutes with nothing playing: the screensaver comes on by itself.
-     * While music plays it doesn't (it may still be started by hand, and then shows stored flights only).
-     */
+    /** Home screen left alone for 15 minutes: the screensaver comes on by itself. */
     private val aerialWatch = object : Runnable {
         override fun run() {
             val ctx = applicationContext
-            if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS &&
-                !Aerials.musicOn(ctx)) Aerials.show(ctx)
+            // 15 minutes without a remote: the screensaver (with music: the music screen, no video).
+            if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS) Aerials.show(ctx)
             Thread { Adb.closeIdleKeys() }.start()
             updates.postDelayed(this, 15_000)
         }

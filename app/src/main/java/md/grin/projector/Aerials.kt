@@ -38,7 +38,8 @@ data class Clip(val place: String, val country: String, val tod: String, val url
  * so the projector soon plays them from its own storage, without Wi-Fi hiccups.
  */
 object Aerials {
-    const val IDLE_MS = 3 * 60_000L
+    /** The screensaver comes on by itself after 15 minutes without anyone touching a remote. */
+    const val IDLE_MS = 15 * 60_000L
     // Kept modest: a nearly full flash drive makes the whole projector slow, not just the screensaver.
     // The projector has only 4.7 GB of storage with ~1.6 GB free: the 12 lightest flights (1.3 GB) are kept,
     // leaving about half a gigabyte free for Android.
@@ -205,7 +206,7 @@ object Aerials {
                     stored = storedCount
                     total = all(ctx).size
                     // With music on, only the first few are saved (slowly); the rest waits for silence.
-                    if (musicOn(ctx) && storedCount >= 3) { SystemClock.sleep(5_000); continue }
+                    if (musicOn(ctx)) { SystemClock.sleep(5_000); continue }
                     // Lightest first: a picture shows up soon, and as many flights as possible fit the small drive.
                     val todo = missing.minByOrNull { it.mb } ?: break
                     if (!makeRoom(ctx)) break
@@ -289,10 +290,39 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
     private val status: TextView
     private val mediaChanged: () -> Unit = { refreshCard() }
 
-    /** Shows the song card, unless it was switched off on the phone. */
+    /** Shows the song card, unless it was switched off on the phone (in music mode the big view shows the song). */
     fun refreshCard() {
         if (!running) return
+        if (musicMode) { nowPlaying.update(null); music.update(Media.current(context)); return }
         nowPlaying.update(if (Aerials.cardOn(context)) Media.current(context) else null)
+    }
+
+    // ---------- music mode ----------
+    // While music plays there is no flight at all: no video decoder, no downloads, nothing that could take
+    // memory or sound away from Spotify. Instead, an Apple TV-style "now playing" screen.
+
+    private var musicMode = false
+    private var silentSince = 0L
+    private val music: MusicScreen
+
+    private fun enterMusic() {
+        if (musicMode) return
+        musicMode = true
+        releasePlayer()
+        main.removeCallbacks(nextClip)
+        curtain.animate().cancel(); curtain.alpha = 1f
+        labels.animate().cancel(); labels.alpha = 0f
+        labelsOn = false
+        revealed = false
+        music.show()
+        refreshCard()
+    }
+
+    private fun leaveMusic() {
+        if (!musicMode) return
+        musicMode = false
+        music.hide()
+        playNext()
     }
     private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = Clock.zone }
 
@@ -336,6 +366,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
         addView(labels, LayoutParams(Ui.px(560), Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
             leftMargin = Ui.px(48); bottomMargin = Ui.px(38)
         })
+        music = MusicScreen(ctx)
+        addView(music, LayoutParams(Ui.MATCH, Ui.MATCH))
         // Shown only while no flight is on screen yet: tells that the library is being prepared.
         status = caption(15, 600).apply {
             gravity = Gravity.CENTER
@@ -382,6 +414,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
 
     fun stop() {
         if (!running) return
+        musicMode = false
+        music.hide()
         running = false
         Aerials.leave()
         if (Aerials.view === this) Aerials.view = null
@@ -414,7 +448,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
 
     /** Swipe on the phone: right is the next flight, left goes back to the previous one. */
     fun skip(dir: Int) {
-        if (!running || surface == null) return
+        if (!running || surface == null || musicMode) return
         val idx = histPos + dir
         val target = history.getOrNull(idx)
         labelsUntil = maxOf(labelsUntil, SystemClock.elapsedRealtime() + 8_000)
@@ -451,6 +485,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
         lastPos = -1
         stuckSince = 0
         startedAt = SystemClock.elapsedRealtime()
+        if (Aerials.musicOn(context)) { enterMusic(); return }
         // Nothing reachable (no internet): only the clock, and another try in a minute.
         if (fails >= 6) { fails = 0; main.postDelayed(nextClip, 60_000); return }
         val music = Aerials.musicOn(context)
@@ -500,7 +535,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
     /** "Готовлю заставку · сохранено 3 из 20 · 45 %" while there is no picture yet. */
     private fun showStatus() {
         val noPicture = !revealed
-        val want = noPicture && player == null
+        val want = noPicture && player == null && !musicMode
         if (want) {
             val pct = Aerials.currentPercent
             val t = "Готовлю заставку · сохранено ${Aerials.stored} из ${Aerials.total.takeIf { it > 0 } ?: 20}" + (if (pct >= 0) " · следующий город $pct %" else "")
@@ -544,8 +579,17 @@ class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Ca
             showStatus()
             refreshCard()
             syncLabels()
-            // Music started while this flight streams from the internet: move to a stored one (or none).
-            if (player != null && source == null && Aerials.musicOn(context)) { playNext(); main.postDelayed(this, 1000); return }
+            // Music started: the flight stops at once and the music screen takes over.
+            // Music stopped for 20 seconds: back to the flights.
+            val musicNow = Aerials.musicOn(context)
+            if (!musicMode && musicNow) { enterMusic(); main.postDelayed(this, 1000); return }
+            if (musicMode) {
+                if (musicNow) silentSince = 0L
+                else if (silentSince == 0L) silentSince = SystemClock.elapsedRealtime()
+                else if (SystemClock.elapsedRealtime() - silentSince > 20_000) { silentSince = 0L; leaveMusic() }
+                main.postDelayed(this, 1000)
+                return
+            }
             val p = player
             val now = SystemClock.elapsedRealtime()
             try {

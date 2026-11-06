@@ -377,7 +377,7 @@ class SettingsActivity : Activity() {
     private fun saver() {
         hero(R.drawable.ic_image, 0xFF30B0C7.toInt(), "Заставка", "Полёты над городами мира, когда проектор отдыхает.")
         group {
-            toggle("Заставка", "Сама через 3 минуты, если ничего не играет", Aerials.isOn(this@SettingsActivity)) { Aerials.setOn(this@SettingsActivity, it) }
+            toggle("Заставка", "Сама через 15 минут без нажатий; при музыке — экран песни", Aerials.isOn(this@SettingsActivity)) { Aerials.setOn(this@SettingsActivity, it) }
             toggle("Песня на заставке", "Карточка в правом верхнем углу", Aerials.cardOn(this@SettingsActivity)) { Aerials.setCard(this@SettingsActivity, it) }
         }
         group {

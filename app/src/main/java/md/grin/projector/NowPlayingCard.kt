@@ -198,3 +198,83 @@ class RoundBar(ctx: Context, private val trackColor: Int, private val fillColor:
         }
     }
 }
+
+/**
+ * The screensaver while music plays, Apple TV style: the room, a large cover, the song in big letters and its
+ * progress. No video at all, so nothing competes with the music for memory or sound.
+ */
+class MusicScreen(ctx: Context) : FrameLayout(ctx) {
+    private val cover = ImageView(ctx)
+    private val note = Ui.icon(ctx, R.drawable.ic_music, 96, 0xE6FFFFFF.toInt())
+    private val source = Ui.text(ctx, "", 15, 600, Glass.TEXT3).apply { letterSpacing = 0.1f }
+    private val title = Ui.text(ctx, "", 46, 700, Color.WHITE).apply { letterSpacing = -0.02f; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }
+    private val artist = Ui.text(ctx, "", 24, 500, Glass.TEXT2)
+    private val bar = RoundBar(ctx, 0x38FFFFFF, Color.WHITE)
+    private val elapsed = Ui.text(ctx, "", 15, 600, Glass.TEXT3)
+    private val left = Ui.text(ctx, "", 15, 600, Glass.TEXT3).apply { gravity = Gravity.END }
+    private var shownArt: Bitmap? = null
+
+    init {
+        background = RoomDrawable()
+        visibility = View.GONE
+        alpha = 0f
+        val row = Ui.row(ctx)
+        val art = FrameLayout(ctx).apply {
+            background = Glass.gradient(30, 0xFF8E6CFF.toInt(), 0xFFFF6FB1.toInt())
+            clipToOutline = true
+        }
+        art.addView(note, FrameLayout.LayoutParams(Ui.px(96), Ui.px(96), Gravity.CENTER))
+        cover.scaleType = ImageView.ScaleType.CENTER_CROP
+        art.addView(cover, FrameLayout.LayoutParams(Ui.MATCH, Ui.MATCH))
+        row.addView(art, Ui.lp(Ui.px(360), Ui.px(360)))
+        val col = Ui.col(ctx)
+        col.addView(source)
+        col.addView(title, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(12) })
+        col.addView(artist, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(8) })
+        col.addView(bar, Ui.lp(Ui.MATCH, Ui.px(6)).apply { topMargin = Ui.px(36) })
+        val times = Ui.row(ctx)
+        times.addView(elapsed, Ui.lp(Ui.px(90), Ui.WRAP))
+        times.addView(Ui.flex(ctx))
+        times.addView(left, Ui.lp(Ui.px(90), Ui.WRAP))
+        col.addView(times, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(10) })
+        row.addView(col, Ui.lp(Ui.px(560), Ui.WRAP).apply { leftMargin = Ui.px(56) })
+        addView(row, LayoutParams(Ui.WRAP, Ui.WRAP, Gravity.CENTER))
+    }
+
+    fun show() {
+        visibility = View.VISIBLE
+        animate().cancel()
+        animate().alpha(1f).setDuration(900).withLayer().start()
+    }
+
+    fun hide() {
+        animate().cancel()
+        if (visibility != View.VISIBLE) return
+        animate().alpha(0f).setDuration(600).withLayer().withEndAction { visibility = View.GONE }.start()
+    }
+
+    fun update(np: NowPlaying?) {
+        if (visibility != View.VISIBLE) return
+        set(source, if (np != null) "СЕЙЧАС ИГРАЕТ · ${np.source.uppercase()}" else "СЕЙЧАС ИГРАЕТ")
+        set(title, np?.title ?: "")
+        set(artist, np?.artist ?: "")
+        val art = np?.art
+        if (art !== shownArt) {
+            shownArt = art
+            cover.setImageBitmap(art)
+            cover.visibility = if (art != null) View.VISIBLE else View.GONE
+        }
+        val dur = np?.duration ?: 0
+        if (np != null && dur > 0) {
+            val pos = np.position.coerceIn(0, dur)
+            bar.fraction = pos.toFloat() / dur
+            set(elapsed, mmss(pos))
+            set(left, "−" + mmss(dur - pos))
+        } else {
+            bar.fraction = 0f; set(elapsed, ""); set(left, "")
+        }
+    }
+
+    private fun set(v: TextView, s: String) { if (v.text.toString() != s) v.text = s }
+    private fun mmss(ms: Long): String { val s = ms / 1000; return "%d:%02d".format(s / 60, s % 60) }
+}

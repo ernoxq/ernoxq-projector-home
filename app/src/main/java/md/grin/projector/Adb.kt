@@ -238,6 +238,10 @@ object Adb {
         section("Время работы и нагрузка", "uptime")
         section("Больше всего памяти (PSS)", "dumpsys meminfo | sed -n '/Total PSS by process/,/Total PSS by OOM/p' | head -30")
         section("Процессор сейчас", "top -b -n 1 -m 15 | tail -17")
+        // Who stopped the music and why: low-memory kills, apps taking the sound, Spotify's own notes.
+        section("Кто держит звук", "dumpsys audio | grep -A6 'Audio Focus stack'")
+        section("Журнал: остановки и нехватка памяти",
+            "logcat -d -v time -t 4000 | grep -iE 'lowmemorykiller|lmkd|Killing [0-9]|has died|ANR in|audio.?focus|spotify' | tail -45")
         section("Включённые приложения прошивки", "pm list packages -s -e | sed 's/package://' | sort")
     }
 

@@ -78,12 +78,11 @@ class RemoteService : Service() {
         }
     }
 
-    /** Home screen left alone for 3 minutes with nothing playing: the screensaver comes on. */
+    /** Home screen left alone for 3 minutes: the screensaver comes on, with the playing song in its top corner. */
     private val aerialWatch = object : Runnable {
         override fun run() {
             val ctx = applicationContext
-            if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS &&
-                Media.current(ctx)?.playing != true) Aerials.show(ctx)
+            if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS) Aerials.show(ctx)
             updates.postDelayed(this, 15_000)
         }
     }

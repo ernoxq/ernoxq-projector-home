@@ -175,6 +175,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val country: TextView
     private val place: TextView
     private val clock: TextView
+    private val nowPlaying: NowPlayingCard
+    private val mediaChanged: () -> Unit = { if (running) nowPlaying.update(Media.current(context)) }
     private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = Clock.zone }
 
     private var surface: Surface? = null
@@ -199,12 +201,22 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x8C000000.toInt(), 0))
         }, LayoutParams(Ui.MATCH, Ui.px(240), Gravity.BOTTOM))
         country = caption(22, 600).apply { letterSpacing = 0.14f }
-        place = caption(54, 600).apply { letterSpacing = -0.02f }
-        labels.addView(country, Ui.lp(Ui.WRAP, Ui.WRAP).apply { bottomMargin = Ui.px(6) })
-        labels.addView(place)
+        // The place may be long ("Рисовые террасы Лунцзи"): it wraps onto a second line instead of being cut to "Р…".
+        place = caption(50, 600).apply {
+            maxLines = 2
+            ellipsize = null
+            setLineSpacing(0f, 1.05f)
+        }
+        labels.addView(country, Ui.lp(Ui.MATCH, Ui.WRAP).apply { bottomMargin = Ui.px(8) })
+        labels.addView(place, Ui.lp(Ui.MATCH, Ui.WRAP))
         labels.alpha = 0f
-        addView(labels, LayoutParams(Ui.WRAP, Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
+        // A fixed width, so the text is never measured against an older, shorter name.
+        addView(labels, LayoutParams(Ui.px(820), Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
             leftMargin = Ui.px(56); bottomMargin = Ui.px(44)
+        })
+        nowPlaying = NowPlayingCard(ctx)
+        addView(nowPlaying, LayoutParams(Ui.px(400), Ui.WRAP, Gravity.TOP or Gravity.END).apply {
+            topMargin = Ui.px(40); rightMargin = Ui.px(40)
         })
         clock = caption(36, 500).apply { alpha = 0.9f }
         addView(clock, LayoutParams(Ui.WRAP, Ui.WRAP, Gravity.BOTTOM or Gravity.END).apply {
@@ -220,6 +232,9 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         if (running) return
         running = true
         Aerials.enter(context)
+        Media.attach(context.applicationContext)
+        Media.listen(mediaChanged)
+        nowPlaying.update(Media.current(context))
         fails = 0
         main.post(tick)
         if (surface != null) playNext()
@@ -229,6 +244,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         if (!running) return
         running = false
         Aerials.leave()
+        Media.unlisten(mediaChanged)
+        nowPlaying.hide()
         main.removeCallbacksAndMessages(null)
         releasePlayer()
         Aerials.playingFile = null
@@ -298,6 +315,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         place.text = c.place
         country.text = c.country.uppercase(Locale("ru"))
         country.visibility = if (c.country.isEmpty()) View.GONE else View.VISIBLE
+        labels.requestLayout()
         video.animate().alpha(1f).setDuration(1400).start()
         labels.animate().alpha(1f).setStartDelay(1200).setDuration(1400).start()
     }
@@ -318,6 +336,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         override fun run() {
             if (!running) return
             clock.text = timeFmt.format(Clock.now())
+            nowPlaying.update(Media.current(context))
             val p = player
             val now = SystemClock.elapsedRealtime()
             try {

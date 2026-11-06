@@ -25,7 +25,7 @@ object Apps {
     const val AIRPLAY_OWN = "md.grin.airplay"
     const val AIRPLAY_STOCK = "io.github.jqssun.airplay"
     /** The receiver version this build of Projector Home brings along (airplay/VERSION). */
-    const val AIRPLAY_BUILD = 1002L
+    const val AIRPLAY_BUILD = 1003L
     /** Which receiver is on the projector right now. */
     @Volatile var AIRPLAY = AIRPLAY_STOCK
         private set
@@ -35,6 +35,14 @@ object Apps {
         AIRPLAY = if (own) AIRPLAY_OWN else AIRPLAY_STOCK
         return AIRPLAY
     }
+
+    /** When each app was last used (from Android's usage records), for ordering the app switcher. */
+    fun lastUsed(ctx: Context): Map<String, Long> = try {
+        val usm = ctx.getSystemService(android.app.usage.UsageStatsManager::class.java)
+        val now = System.currentTimeMillis()
+        usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_DAILY, now - 3 * 24 * 3600_000L, now)
+            .groupBy { it.packageName }.mapValues { e -> e.value.maxOf { it.lastTimeUsed } }
+    } catch (_: Exception) { emptyMap() }
 
     fun installedVersion(ctx: Context, pkg: String): Long =
         try { ctx.packageManager.getPackageInfo(pkg, 0).longVersionCode } catch (_: Exception) { -1L }

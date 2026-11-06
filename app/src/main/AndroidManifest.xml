@@ -58,6 +58,14 @@
             android:screenOrientation="landscape" />
 
         <activity
+            android:name=".SwitcherActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape" />
+
+        <activity
             android:name=".AllAppsActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="false"

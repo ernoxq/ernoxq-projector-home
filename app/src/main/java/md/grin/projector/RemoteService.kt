@@ -38,6 +38,7 @@ class RemoteService : Service() {
         updates.postDelayed({ Thread { Adb.quietSystem(applicationContext); Adb.closeOtherHomes(applicationContext) }.start() }, 3_000)
         updates.postDelayed(airplayWatch, 30_000)
         updates.postDelayed(aerialWatch, 30_000)
+        updates.postDelayed(airplayAlive, 90_000)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
     }
 
@@ -105,6 +106,14 @@ class RemoteService : Service() {
             if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS) Aerials.show(ctx)
             Thread { Adb.closeIdleKeys() }.start()
             updates.postDelayed(this, 15_000)
+        }
+    }
+
+    /** AirPlay must always be visible on the iPhone and Mac: every 3 minutes, start it again if it stopped. */
+    private val airplayAlive = object : Runnable {
+        override fun run() {
+            Thread { try { Adb.startAirplay(applicationContext) } catch (_: Exception) {} }.start()
+            updates.postDelayed(this, 3 * 60_000L)
         }
     }
 

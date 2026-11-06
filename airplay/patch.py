@@ -74,12 +74,26 @@ edit(act, """        setContent {
         }""")
 shutil.copy(here / "GrinShell.kt", src / "ui/GrinShell.kt")
 
-# The window closes when it goes to the background with nobody connected: the receiver keeps running as a
-# service, without holding its whole screen in the projector's 1 GB of memory.
-edit(act, """    override fun onStop() {
-        super.onStop()""", """    override fun onStop() {
-        super.onStop()
-        if (!isChangingConfigurations && !isInPip.value && viewModel.connectionCount.value == 0) finish()""")
+# --- always on, without any window --------------------------------------------------------------
+# Projector Home starts the receiver with a broadcast (no window flashes up), and if Android ever stops the
+# service for memory, it comes back by itself and starts serving again.
+edit("app/src/main/kotlin/io/github/jqssun/airplay/BootReceiver.kt",
+     """        if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
+            intent.action != "android.intent.action.QUICKBOOT_POWERON") return""",
+     """        if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
+            intent.action != "android.intent.action.QUICKBOOT_POWERON" &&
+            intent.action != "md.grin.airplay.START") return""")
+edit(svc, """        if (intent?.action == ACTION_START_SERVER) {
+            promoteToForeground()
+            _startServer(ensureServiceStarted = false)
+            if (_serverState.value != ServerState.RUNNING) stopSelf(startId)
+        }
+        return START_NOT_STICKY""", """        if (intent?.action == ACTION_START_SERVER || intent == null) {
+            promoteToForeground()
+            _startServer(ensureServiceStarted = false)
+            if (_serverState.value != ServerState.RUNNING) stopSelf(startId)
+        }
+        return START_STICKY""")
 
 # --- window theme: black from the first frame, never a white flash ----------------------------
 dark = """<?xml version="1.0" encoding="utf-8"?>

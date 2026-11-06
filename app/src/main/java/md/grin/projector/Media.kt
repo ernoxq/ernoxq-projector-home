@@ -82,7 +82,25 @@ object Media {
         repick()
     }
 
+    private val wasPlaying = HashSet<String>()
+
+    /**
+     * One music at a time: when a player starts (music from the Mac over AirPlay, say), the others that are
+     * playing are paused, so they don't fight over the sound, the Wi‑Fi and the projector's little memory.
+     */
+    private fun onePlayer() {
+        val now = sessions.filter { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+        val started = now.filter { it.packageName !in wasPlaying }
+        if (started.isNotEmpty() && now.size > 1) {
+            val keep = started.last().packageName
+            now.filter { it.packageName != keep }.forEach { try { it.transportControls.pause() } catch (_: Exception) {} }
+        }
+        wasPlaying.clear()
+        sessions.filter { it.playbackState?.state == PlaybackState.STATE_PLAYING }.forEach { wasPlaying += it.packageName }
+    }
+
     private fun repick() {
+        onePlayer()
         val playing = sessions.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
         val keep = controller?.let { cur -> sessions.firstOrNull { it.sessionToken == cur.sessionToken } }
         controller = playing ?: keep ?: sessions.firstOrNull()

@@ -355,9 +355,20 @@ object Adb {
         for ((k, v) in listOf("auto_start" to "true", "boot_auto_start" to "true", "run_in_background" to "true", "auto_fullscreen" to "true")) {
             shell(ctx, airSet(air, k, v))
         }
+        // AirPlay matters more than apps in the background: never put to sleep, allowed to run in background.
+        shell(ctx, "cmd appops set $air RUN_ANY_IN_BACKGROUND allow")
+        shell(ctx, "am set-standby-bucket $air active")
+        startAirplay(ctx, air)
+    }
+
+    /** Starts the receiver's service if it isn't running. Ours starts without any window. */
+    fun startAirplay(ctx: Context, air: String = Apps.detectAirplay(ctx)) {
         val running = run(ctx, "pidof $air")?.trim().orEmpty().isNotEmpty()
-        if (!running) {
-            // Opening the receiver once starts its background service; then come straight back home.
+        if (running) return
+        if (air == Apps.AIRPLAY_OWN) {
+            shell(ctx, "am broadcast -a md.grin.airplay.START -n $air/$AIR_CLS.BootReceiver")
+        } else {
+            // The stock receiver needs its window opened once; then straight back home.
             shell(ctx, "am start -n $air/$AIR_CLS.MainActivity")
             Thread.sleep(2500)
             shell(ctx, "input keyevent 3")
@@ -376,9 +387,7 @@ object Adb {
         val ok = shell(ctx, airSet(air, "server_name", name))
         if (!ok) return
         shell(ctx, "am force-stop $air")
-        shell(ctx, "am start -n $air/$AIR_CLS.MainActivity")
-        Thread.sleep(2500)
-        shell(ctx, "input keyevent 3")
+        startAirplay(ctx, air)
         prefs.edit().putString("airplay_name_$air", name).apply()
     }
 }

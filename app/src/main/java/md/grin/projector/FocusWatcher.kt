@@ -9,8 +9,16 @@ import android.view.accessibility.AccessibilityEvent
  * instead of the stock panel. It asks for no other events, so apps don't do extra work for it.
  */
 class FocusWatcher : AccessibilityService() {
+    private var lastHome = 0L
+
     override fun onKeyEvent(event: KeyEvent): Boolean {
         SleepTimer.touch()
+        // Home pressed twice quickly: open apps, like on Apple TV.
+        if (event.keyCode == KeyEvent.KEYCODE_HOME && event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (now - lastHome < 450) { lastHome = 0; SwitcherActivity.show(this); return true }
+            lastHome = now
+        }
         val dir = when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> "up"
             KeyEvent.KEYCODE_VOLUME_DOWN -> "down"

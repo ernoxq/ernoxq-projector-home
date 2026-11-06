@@ -3,439 +3,658 @@
 "place": "Вид с орбиты",
 "country": "Япония и Корея",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GMT026_363A_103NC_E1027_KOREA_JAPAN_NIGHT_v18_SDR_PS_20180907_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GMT026_363A_103NC_E1027_KOREA_JAPAN_NIGHT_v18_SDR_PS_20180907_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_GMT026_363A_103NC_E1027_KOREA_JAPAN_NIGHT_v18_SDR_PS_20180907_SDR_2K_HEVC.mov",
+"mb": 145,
+"mb264": 215
 },
 {
 "place": "Вид с орбиты",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GMT329_113NC_396B_1105_CHINA_v04_SDR_FINAL_20180706_F900F2700_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GMT329_113NC_396B_1105_CHINA_v04_SDR_FINAL_20180706_F900F2700_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_GMT329_113NC_396B_1105_CHINA_v04_SDR_FINAL_20180706_F900F2700_SDR_2K_HEVC.mov",
+"mb": 31,
+"mb264": 47
 },
 {
 "place": "Оазис Лива",
 "country": "ОАЭ",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LW_L001_C006_PSNK_DENOISE_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LW_L001_C006_PSNK_DENOISE_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LW_L001_C006_PSNK_DENOISE_v02_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 220,
+"mb264": 320
 },
 {
 "place": "Великая стена",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C003_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C003_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_C003_C003_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 129,
+"mb264": 186
 },
 {
 "place": "Шотландия",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S003_C020_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S003_C020_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/S003_C020_SDR_2K_HEVC.mov",
+"mb": 366,
+"mb264": 605
 },
 {
 "place": "Гавайи",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H007_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H007_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_H007_C003_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 124,
+"mb264": 188
 },
 {
 "place": "Великая стена",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C004_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C004_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_C004_C003_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 148,
+"mb264": 222
 },
 {
 "place": "Гавайи",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H004_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H004_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_H004_C009_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 125,
+"mb264": 181
 },
 {
 "place": "Торрес-дель-Пайне",
 "country": "Чили",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P006_C002_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P006_C002_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/P006_C002_UHD_SDR_2K_HEVC.mov",
+"mb": 234,
+"mb264": 383
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I005_C008_CROP_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I005_C008_CROP_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I005_C008_CROP_SDR_2K_HEVC.mov",
+"mb": 403,
+"mb264": 642
 },
 {
 "place": "Гренландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G002_C002_PSNK_v03_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G002_C002_PSNK_v03_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_GL_G002_C002_PSNK_v03_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 308,
+"mb264": 460
 },
 {
 "place": "Шотландия",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S005_C015_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S005_C015_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/S005_C015_SDR_2K_HEVC.mov",
+"mb": 299,
+"mb264": 495
 },
 {
 "place": "Гавайи",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H012_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H012_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_H012_C009_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 120,
+"mb264": 181
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y011_C001_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y011_C001_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y011_C001_SDR_2K_HEVC.mov",
+"mb": 494,
+"mb264": 830
 },
 {
 "place": "Гавайи",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H005_C012_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H005_C012_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_H005_C012_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 174,
+"mb264": 260
 },
 {
 "place": "Торрес-дель-Пайне",
 "country": "Чили",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P001_C005_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P001_C005_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/P001_C005_UHD_SDR_2K_HEVC.mov",
+"mb": 373,
+"mb264": 614
 },
 {
 "place": "Гранд-Каньон",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G010_C026_UHD_SDR_v02_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G010_C026_UHD_SDR_v02_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/G010_C026_UHD_SDR_v02_2K_HEVC.mov",
+"mb": 180,
+"mb264": 295
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y003_C009_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y003_C009_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y003_C009_SDR_2K_HEVC.mov",
+"mb": 256,
+"mb264": 414
 },
 {
 "place": "Гавайи",
 "country": "США",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H004_C007_PS_v02_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_H004_C007_PS_v02_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_H004_C007_PS_v02_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 122,
+"mb264": 181
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C004_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C004_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I003_C004_SDR_2K_HEVC.mov",
+"mb": 700,
+"mb264": 1165
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I004_C014_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I004_C014_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I004_C014_SDR_2K_HEVC.mov",
+"mb": 464,
+"mb264": 762
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y011_C008_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y011_C008_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y011_C008_SDR_2K_HEVC.mov",
+"mb": 412,
+"mb264": 681
 },
 {
 "place": "Рисовые террасы Лунцзи",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C002_C005_PSNK_v05_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C002_C005_PSNK_v05_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_CH_C002_C005_PSNK_v05_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 105,
+"mb264": 158
 },
 {
 "place": "Гранд-Каньон",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G009_C014_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G009_C014_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/G009_C014_UHD_SDR_2K_HEVC.mov",
+"mb": 415,
+"mb264": 695
 },
 {
 "place": "Оазис Лива",
 "country": "ОАЭ",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LW_L001_C003__PSNK_DENOISE_v04_SDR_PS_FINAL_20180803_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LW_L001_C003__PSNK_DENOISE_v04_SDR_PS_FINAL_20180803_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LW_L001_C003__PSNK_DENOISE_v04_SDR_PS_FINAL_20180803_SDR_2K_HEVC.mov",
+"mb": 93,
+"mb264": 140
 },
 {
 "place": "Торрес-дель-Пайне",
 "country": "Чили",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P005_C002_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P005_C002_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/P005_C002_UHD_SDR_2K_HEVC.mov",
+"mb": 441,
+"mb264": 712
 },
 {
 "place": "Улинъюань",
 "country": "Китай",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C007_C011_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C007_C011_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_CH_C007_C011_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 251,
+"mb264": 372
 },
 {
 "place": "Гренландия",
 "country": "",
 "tod": "sunrise",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G004_C010_PSNK_v04_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G004_C010_PSNK_v04_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_GL_G004_C010_PSNK_v04_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 146,
+"mb264": 220
 },
 {
 "place": "Улинъюань",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C007_C004_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_CH_C007_C004_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_CH_C007_C004_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 246,
+"mb264": 370
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y009_C015_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y009_C015_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y009_C015_SDR_2K_HEVC.mov",
+"mb": 438,
+"mb264": 719
 },
 {
 "place": "Гранд-Каньон",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G008_C015_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G008_C015_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/G008_C015_UHD_SDR_2K_HEVC.mov",
+"mb": 148,
+"mb264": 246
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C008_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C008_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I003_C008_SDR_2K_HEVC.mov",
+"mb": 246,
+"mb264": 406
 },
 {
 "place": "Шотландия",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S006_C007_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/S006_C007_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/S006_C007_SDR_2K_HEVC.mov",
+"mb": 205,
+"mb264": 338
 },
 {
 "place": "Гранд-Каньон",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G007_C004_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G007_C004_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/G007_C004_UHD_SDR_2K_HEVC.mov",
+"mb": 358,
+"mb264": 602
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y005_C003_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y005_C003_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y005_C003_SDR_2K_HEVC.mov",
+"mb": 230,
+"mb264": 386
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y002_C013_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y002_C013_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y002_C013_SDR_2K_HEVC.mov",
+"mb": 238,
+"mb264": 391
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C011_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C011_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I003_C011_SDR_2K_HEVC.mov",
+"mb": 392,
+"mb264": 641
 },
 {
 "place": "Йосемити",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y004_C015_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/Y004_C015_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/Y004_C015_SDR_2K_HEVC.mov",
+"mb": 173,
+"mb264": 289
 },
 {
 "place": "Торрес-дель-Пайне",
 "country": "Чили",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P007_C027_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/P007_C027_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/P007_C027_UHD_SDR_2K_HEVC.mov",
+"mb": 553,
+"mb264": 910
 },
 {
 "place": "Гренландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G010_C006_PSNK_NOSUN_v12_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_GL_G010_C006_PSNK_NOSUN_v12_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_GL_G010_C006_PSNK_NOSUN_v12_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 304,
+"mb264": 465
 },
 {
 "place": "Великая стена",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C001_C005_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_C001_C005_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_C001_C005_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 172,
+"mb264": 258
 },
 {
 "place": "Исландия",
 "country": "",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C015_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/I003_C015_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/I003_C015_SDR_2K_HEVC.mov",
+"mb": 347,
+"mb264": 575
 },
 {
 "place": "Гранд-Каньон",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G009_C003_UHD_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/G009_C003_UHD_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/G009_C003_UHD_SDR_2K_HEVC.mov",
+"mb": 422,
+"mb264": 697
 },
 {
 "place": "Дубай",
 "country": "ОАЭ",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D002_C003_PSNK_v04_SDR_PS_20180914_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D002_C003_PSNK_v04_SDR_PS_20180914_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_DB_D002_C003_PSNK_v04_SDR_PS_20180914_SDR_2K_HEVC.mov",
+"mb": 188,
+"mb264": 275
 },
 {
 "place": "Гонконг",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C013_t9_6M_HB_tag0.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C013_t9_6M_HB_tag0.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/HK_H004_C013_2K_SDR_HEVC.mov",
+"mb": 335,
+"mb264": 508
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A007_C017_01156B_v02_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A007_C017_01156B_v02_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A007_C017_01156B_v02_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 124,
+"mb264": 184
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A005_C009_PSNK_ALT_v09_SDR_PS_201809134_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A005_C009_PSNK_ALT_v09_SDR_PS_201809134_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A005_C009_PSNK_ALT_v09_SDR_PS_201809134_SDR_2K_HEVC.mov",
+"mb": 108,
+"mb264": 163
 },
 {
 "place": "Нью-Йорк",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N008_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N008_C009_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_N008_C009_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 246,
+"mb264": 370
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A015_C018_0128ZS_v03_SDR_PS_FINAL_20180709__SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A015_C018_0128ZS_v03_SDR_PS_FINAL_20180709__SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A015_C018_0128ZS_v03_SDR_PS_FINAL_20180709__SDR_2K_HEVC.mov",
+"mb": 125,
+"mb264": 186
 },
 {
 "place": "Дубай",
 "country": "ОАЭ",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D001_C005_COMP_PSNK_v12_SDR_PS_20180912_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D001_C005_COMP_PSNK_v12_SDR_PS_20180912_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_DB_D001_C005_COMP_PSNK_v12_SDR_PS_20180912_SDR_2K_HEVC.mov",
+"mb": 232,
+"mb264": 346
 },
 {
 "place": "Нью-Йорк",
 "country": "США",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N013_C004_PS_v01_SDR_PS_20180925_F1970F7193_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N013_C004_PS_v01_SDR_PS_20180925_F1970F7193_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_N013_C004_PS_v01_SDR_PS_20180925_F1970F7193_SDR_2K_HEVC.mov",
+"mb": 88,
+"mb264": 134
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_1223LV_FLARE_v21_SDR_PS_FINAL_20180709_F0F5700_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_1223LV_FLARE_v21_SDR_PS_FINAL_20180709_F0F5700_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_1223LV_FLARE_v21_SDR_PS_FINAL_20180709_F0F5700_SDR_2K_HEVC.mov",
+"mb": 101,
+"mb264": 160
 },
 {
 "place": "Лондон",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L010_C006_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L010_C006_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_L010_C006_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 174,
+"mb264": 255
 },
 {
 "place": "Нью-Йорк",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N008_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N008_C003_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_N008_C003_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 123,
+"mb264": 183
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A013_C012_0122D6_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A013_C012_0122D6_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A013_C012_0122D6_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 161,
+"mb264": 237
 },
 {
 "place": "Лондон",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L004_C011_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L004_C011_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_L004_C011_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 174,
+"mb264": 258
 },
 {
 "place": "Нью-Йорк",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N003_C006_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_N003_C006_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_N003_C006_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 124,
+"mb264": 187
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "sunrise",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A012_C014_1223PT_v53_SDR_PS_FINAL_20180709_F0F8700_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A012_C014_1223PT_v53_SDR_PS_FINAL_20180709_F0F8700_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A012_C014_1223PT_v53_SDR_PS_FINAL_20180709_F0F8700_SDR_2K_HEVC.mov",
+"mb": 195,
+"mb264": 249
 },
 {
 "place": "Дубай",
 "country": "ОАЭ",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D008_C010_PSNK_v21_SDR_PS_20180914_F0F16157_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D008_C010_PSNK_v21_SDR_PS_20180914_F0F16157_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_DB_D008_C010_PSNK_v21_SDR_PS_20180914_F0F16157_SDR_2K_HEVC.mov",
+"mb": 276,
+"mb264": 414
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A009_C009_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A009_C009_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A009_C009_PSNK_v02_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 102,
+"mb264": 170
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A008_C004_ALTB_ED_FROM_FLAME_RETIME_v46_SDR_PS_20180917_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A008_C004_ALTB_ED_FROM_FLAME_RETIME_v46_SDR_PS_20180917_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A008_C004_ALTB_ED_FROM_FLAME_RETIME_v46_SDR_PS_20180917_SDR_2K_HEVC.mov",
+"mb": 411,
+"mb264": 619
 },
 {
 "place": "Дубай",
 "country": "ОАЭ",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D011_C010_PSNK_DENOISE_v19_SDR_PS_20180914_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D011_C010_PSNK_DENOISE_v19_SDR_PS_20180914_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_DB_D011_C010_PSNK_DENOISE_v19_SDR_PS_20180914_SDR_2K_HEVC.mov",
+"mb": 188,
+"mb264": 278
 },
 {
 "place": "Лондон",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L007_C007_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L007_C007_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_L007_C007_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 188,
+"mb264": 278
 },
 {
 "place": "Гонконг",
 "country": "Китай",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C010_PSNK_v08_SDR_PS_20181009_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C010_PSNK_v08_SDR_PS_20181009_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_HK_H004_C010_PSNK_v08_SDR_PS_20181009_SDR_2K_HEVC.mov",
+"mb": 215,
+"mb264": 321
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A006_C008_PSNK_ALL_LOGOS_v10_SDR_PS_FINAL_20180801_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A006_C008_PSNK_ALL_LOGOS_v10_SDR_PS_FINAL_20180801_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A006_C008_PSNK_ALL_LOGOS_v10_SDR_PS_FINAL_20180801_SDR_2K_HEVC.mov",
+"mb": 183,
+"mb264": 276
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A006_C003_1219EE_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A006_C003_1219EE_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A006_C003_1219EE_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 125,
+"mb264": 184
 },
 {
 "place": "Дубай",
 "country": "ОАЭ",
 "tod": "night",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D001_C001_PSNK_v06_SDR_PS_20180824_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_DB_D001_C001_PSNK_v06_SDR_PS_20180824_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_DB_D001_C001_PSNK_v06_SDR_PS_20180824_SDR_2K_HEVC.mov",
+"mb": 246,
+"mb264": 367
 },
 {
 "place": "Гонконг",
 "country": "Китай",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_B005_C011_PSNK_v16_SDR_PS_20180914_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_B005_C011_PSNK_v16_SDR_PS_20180914_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_HK_B005_C011_PSNK_v16_SDR_PS_20180914_SDR_2K_HEVC.mov",
+"mb": 167,
+"mb264": 249
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "sunset",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A006_C004_v01_SDR_FINAL_PS_20180730_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A006_C004_v01_SDR_FINAL_PS_20180730_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A006_C004_v01_SDR_FINAL_PS_20180730_SDR_2K_HEVC.mov",
+"mb": 140,
+"mb264": 212
 },
 {
 "place": "Сан-Франциско",
 "country": "США",
 "tod": "sunrise",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A008_C007_011550_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_A008_C007_011550_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_A008_C007_011550_CC_v01_SDR_PS_FINAL_20180709_SDR_2K_HEVC.mov",
+"mb": 174,
+"mb264": 259
 },
 {
 "place": "Лос-Анджелес",
 "country": "США",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A011_C003_DGRN_LNFIX_STAB_v57_SDR_PS_20181002_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_LA_A011_C003_DGRN_LNFIX_STAB_v57_SDR_PS_20181002_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_LA_A011_C003_DGRN_LNFIX_STAB_v57_SDR_PS_20181002_SDR_2K_HEVC.mov",
+"mb": 268,
+"mb264": 400
 },
 {
 "place": "Лондон",
 "country": "Великобритания",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L012_c002_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_L012_c002_PS_v01_SDR_PS_20180925_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_L012_c002_PS_v01_SDR_PS_20180925_SDR_2K_HEVC.mov",
+"mb": 150,
+"mb264": 222
 },
 {
 "place": "Гонконг",
 "country": "Китай",
 "tod": "day",
-"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C008_PSNK_v19_SDR_PS_20180914_SDR_2K_AVC.mov"
+"url": "http://sylvan.apple.com/itunes-assets/Aerials116/v4/97/e9/06/97e90616-1227-c670-6118-bd5ae991b43b/comp_HK_H004_C008_PSNK_v19_SDR_PS_20180914_SDR_2K_AVC.mov",
+"hevc": "http://sylvan.apple.com/Aerials/2x/Videos/comp_HK_H004_C008_PSNK_v19_SDR_PS_20180914_SDR_2K_HEVC.mov",
+"mb": 337,
+"mb264": 506
 },
 {
 "place": "Долина монументов",

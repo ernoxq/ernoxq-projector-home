@@ -33,7 +33,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
-data class Clip(val place: String, val country: String, val tod: String, val url: String)
+/** A flight. [hevc] is Apple's lighter H.265 copy of the same Full HD clip (about a third smaller), [mb] its size. */
+data class Clip(val place: String, val country: String, val tod: String, val url: String, val hevc: String? = null, val mb: Int = 300)
 
 /**
  * Apple TV-style screensaver: flights over cities and countries with the place written in the corner.
@@ -79,7 +80,9 @@ object Aerials {
         val arr = JSONArray(ctx.assets.open("aerials.json").bufferedReader().use { it.readText() })
         List(arr.length()) {
             val o = arr.getJSONObject(it)
-            Clip(o.getString("place"), o.optString("country"), o.optString("tod"), o.getString("url"))
+            val hevc = o.optString("hevc").ifEmpty { null }
+            Clip(o.getString("place"), o.optString("country"), o.optString("tod"), o.getString("url"), hevc,
+                o.optInt(if (hevc != null) "mb" else "mb264", 0).takeIf { it > 0 } ?: 300)
         }.also { clips = it }
     }
 
@@ -90,7 +93,29 @@ object Aerials {
     }
 
     private fun dir(ctx: Context) = File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "aerials").apply { mkdirs() }
-    fun file(ctx: Context, c: Clip) = File(dir(ctx), Integer.toHexString(c.url.hashCode()) + ".video")
+    private fun fileFor(ctx: Context, url: String) = File(dir(ctx), Integer.toHexString(url.hashCode()) + ".video")
+
+    /** Can this projector decode Full HD H.265 in hardware? Then the lighter copies are used. */
+    private val hevcOk: Boolean by lazy {
+        try {
+            android.media.MediaCodecList(android.media.MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
+                !info.isEncoder && info.supportedTypes.any { it.equals("video/hevc", true) } &&
+                    !info.name.startsWith("c2.android", true) && !info.name.startsWith("OMX.google", true) &&
+                    try { info.getCapabilitiesForType("video/hevc").videoCapabilities.isSizeSupported(1920, 1080) } catch (_: Exception) { false }
+            }
+        } catch (_: Exception) { false }
+    }
+
+    /** Where this flight is fetched from: the H.265 copy when the projector can play it. */
+    fun source(c: Clip): String = if (hevcOk && c.hevc != null) c.hevc else c.url
+
+    /** The stored copy to play (either kind, so flights saved before keep playing), or where to save one. */
+    fun file(ctx: Context, c: Clip): File {
+        val preferred = fileFor(ctx, source(c))
+        if (preferred.exists()) return preferred
+        val other = fileFor(ctx, c.url)
+        return if (other.exists()) other else preferred
+    }
 
     /**
      * Music is playing (Spotify, AirPlay…). The projector's Wi‑Fi is weak and AirPlay sound has almost no
@@ -159,9 +184,10 @@ object Aerials {
             try {
                 var fails = 0
                 while (showing && fails < 3) {
-                    // Never while music plays: saving a flight takes the whole Wi‑Fi and the music stops.
-                    if (musicOn(ctx)) { SystemClock.sleep(5_000); continue }
-                    val todo = pool(ctx).filter { !file(ctx, it).exists() }.randomOrNull() ?: break
+                    val missing = pool(ctx).filter { !file(ctx, it).exists() }
+                    val storedCount = pool(ctx).size - missing.size
+                    // Little stored yet: the lightest flights first, so a picture shows up soon.
+                    val todo = (if (storedCount < 4) missing.minByOrNull { it.mb } else missing.randomOrNull()) ?: break
                     if (!makeRoom(ctx)) break
                     try { download(ctx, todo, file(ctx, todo)); fails = 0 } catch (_: Exception) { fails++; SystemClock.sleep(5_000) }
                 }
@@ -183,7 +209,7 @@ object Aerials {
 
     private fun download(ctx: Context, c: Clip, to: File) {
         val part = File(to.path + ".part")
-        var u = URL(c.url)
+        var u = URL(source(c))
         var hops = 0
         var conn: HttpURLConnection
         while (true) {
@@ -208,10 +234,12 @@ object Aerials {
             conn.inputStream.use { input ->
                 FileOutputStream(part, append).use { out ->
                     val buf = ByteArray(64 * 1024)
-                    while (showing && !musicOn(ctx)) {
+                    while (showing) {
                         val n = input.read(buf)
                         if (n < 0) { done = true; break }
                         out.write(buf, 0, n)
+                        // While music plays, save slowly (about 2.5 Mbit/s) so the music keeps its share of the Wi‑Fi.
+                        if (musicOn(ctx)) SystemClock.sleep(200)
                     }
                 }
             }
@@ -434,7 +462,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             p.setOnVideoSizeChangedListener { mp, w, h -> if (mp === player) crop(w, h) }
             p.setOnCompletionListener { if (it === player) playNext() }
             p.setOnErrorListener { mp, _, _ -> if (mp === player) failed(); true }
-            if (f != null) p.setDataSource(f.path) else p.setDataSource(context, Uri.parse(c.url), Aerials.headers)
+            if (f != null) p.setDataSource(f.path) else p.setDataSource(context, Uri.parse(Aerials.source(c)), Aerials.headers)
             p.prepareAsync()
         } catch (_: Exception) {
             failed()

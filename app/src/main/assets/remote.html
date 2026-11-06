@@ -276,7 +276,7 @@ pad.addEventListener('pointerdown',e=>{
   pad.setPointerCapture(e.pointerId);pts.set(e.pointerId,e);
   if(pts.size===2){two=true;clearTimeout(longT);vy=[...pts.values()].reduce((a,p)=>a+p.clientY,0)/2;return}
   if(pts.size>2)return;
-  two=false;pad.classList.add('touch');
+  two=false;pad.classList.add('touch');fetch('/api/touch').catch(()=>{});
   const [x,y]=pos(e);glow.style.transform='translate('+x+'px,'+y+'px)';
   sx=ox=e.clientX;sy=oy=e.clientY;t0=Date.now();axis=null;moved=false;
   clearTimeout(longT);

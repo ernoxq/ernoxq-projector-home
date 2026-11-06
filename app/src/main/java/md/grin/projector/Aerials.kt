@@ -100,6 +100,28 @@ object Aerials {
 
     fun leave() { active.decrementAndGet() }
 
+    private val ui = Handler(Looper.getMainLooper())
+    @Volatile var view: AerialView? = null
+    private var lastSwipe = 0L
+
+    /**
+     * The phone remote while the screensaver is on: a swipe left or right changes the flight,
+     * any other touch brings the place name back. OK, Back and Home still close the screensaver.
+     */
+    fun remote(key: String): Boolean {
+        val v = view ?: return false
+        when (key) {
+            "left", "right" -> {
+                val now = SystemClock.elapsedRealtime()
+                // One swipe sends several steps as the finger moves: count it once.
+                if (now - lastSwipe > 800) { lastSwipe = now; ui.post { v.skip(if (key == "right") 1 else -1) } }
+            }
+            "up", "down", "touch" -> ui.post { v.wake() }
+            else -> return false
+        }
+        return true
+    }
+
     /** While the screensaver is on, saves flights one by one. It stops as soon as someone comes back. */
     private fun startDownloads(ctx: Context) {
         synchronized(this) { if (downloading) return; downloading = true }
@@ -190,6 +212,11 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private var lastPos = -1
     private var stuckSince = 0L
     private var fading = false
+    private var revealed = false
+    private var labelsOn = false
+    private var labelsUntil = 0L
+    private val history = ArrayList<Clip>()
+    private var histPos = -1
 
     init {
         Ui.init(ctx)
@@ -198,40 +225,43 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         video.alpha = 0f
         addView(video, LayoutParams(Ui.MATCH, Ui.MATCH))
         addView(View(ctx).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x8C000000.toInt(), 0))
-        }, LayoutParams(Ui.MATCH, Ui.px(240), Gravity.BOTTOM))
-        country = caption(22, 600).apply { letterSpacing = 0.14f }
+            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x66000000, 0))
+        }, LayoutParams(Ui.MATCH, Ui.px(170), Gravity.BOTTOM))
+        country = caption(13, 600).apply { letterSpacing = 0.18f; alpha = 0.85f }
         // The place may be long ("Рисовые террасы Лунцзи"): it wraps onto a second line instead of being cut to "Р…".
-        place = caption(50, 600).apply {
+        place = caption(28, 500).apply {
             maxLines = 2
             ellipsize = null
-            setLineSpacing(0f, 1.05f)
+            setLineSpacing(0f, 1.08f)
         }
-        labels.addView(country, Ui.lp(Ui.MATCH, Ui.WRAP).apply { bottomMargin = Ui.px(8) })
+        labels.addView(country, Ui.lp(Ui.MATCH, Ui.WRAP).apply { bottomMargin = Ui.px(6) })
         labels.addView(place, Ui.lp(Ui.MATCH, Ui.WRAP))
         labels.alpha = 0f
         // A fixed width, so the text is never measured against an older, shorter name.
-        addView(labels, LayoutParams(Ui.px(820), Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
-            leftMargin = Ui.px(56); bottomMargin = Ui.px(44)
+        addView(labels, LayoutParams(Ui.px(560), Ui.WRAP, Gravity.BOTTOM or Gravity.START).apply {
+            leftMargin = Ui.px(48); bottomMargin = Ui.px(38)
         })
         nowPlaying = NowPlayingCard(ctx)
-        addView(nowPlaying, LayoutParams(Ui.px(400), Ui.WRAP, Gravity.TOP or Gravity.END).apply {
-            topMargin = Ui.px(40); rightMargin = Ui.px(40)
+        addView(nowPlaying, LayoutParams(Ui.px(290), Ui.WRAP, Gravity.TOP or Gravity.END).apply {
+            topMargin = Ui.px(32); rightMargin = Ui.px(32)
         })
-        clock = caption(36, 500).apply { alpha = 0.9f }
+        clock = caption(22, 500).apply { alpha = 0.85f }
         addView(clock, LayoutParams(Ui.WRAP, Ui.WRAP, Gravity.BOTTOM or Gravity.END).apply {
-            rightMargin = Ui.px(56); bottomMargin = Ui.px(46)
+            rightMargin = Ui.px(48); bottomMargin = Ui.px(38)
         })
     }
 
     private fun caption(size: Int, weight: Int) = Ui.text(context, "", size, weight, Color.WHITE).apply {
-        setShadowLayer(Ui.pxf(14), 0f, Ui.pxf(2), 0x99000000.toInt())
+        setShadowLayer(Ui.pxf(10), 0f, Ui.pxf(1), 0x80000000.toInt())
     }
 
     fun start() {
         if (running) return
         running = true
         Aerials.enter(context)
+        Aerials.view = this
+        // The place name is shown for the first minute, then fades away.
+        labelsUntil = SystemClock.elapsedRealtime() + 60_000
         Media.attach(context.applicationContext)
         Media.listen(mediaChanged)
         nowPlaying.update(Media.current(context))
@@ -244,6 +274,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         if (!running) return
         running = false
         Aerials.leave()
+        if (Aerials.view === this) Aerials.view = null
         Media.unlisten(mediaChanged)
         nowPlaying.hide()
         main.removeCallbacksAndMessages(null)
@@ -260,20 +291,61 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
 
     private val nextClip = Runnable { playNext() }
 
-    private fun playNext() {
+    /** Brings the place name back for a few seconds (a touch on the phone remote). */
+    fun wake(ms: Long = 10_000) {
+        if (!running) return
+        labelsUntil = maxOf(labelsUntil, SystemClock.elapsedRealtime() + ms)
+        syncLabels()
+    }
+
+    /** Swipe on the phone: right is the next flight, left goes back to the previous one. */
+    fun skip(dir: Int) {
+        if (!running || surface == null) return
+        val idx = histPos + dir
+        val target = history.getOrNull(idx)
+        labelsUntil = maxOf(labelsUntil, SystemClock.elapsedRealtime() + 8_000)
+        main.removeCallbacks(nextClip)
+        revealed = false
+        syncLabels()
+        video.animate().cancel()
+        video.animate().alpha(0f).setStartDelay(0).setDuration(350).withEndAction {
+            if (running) playNext(target, idx)
+        }.start()
+    }
+
+    private fun syncLabels() {
+        val want = revealed && !fading && SystemClock.elapsedRealtime() < labelsUntil
+        if (want == labelsOn) return
+        labelsOn = want
+        labels.animate().cancel()
+        labels.animate().alpha(if (want) 1f else 0f)
+            .setStartDelay(if (want) 700 else 0)
+            .setDuration(if (want) 1000 else 2000)
+            .start()
+    }
+
+    private fun playNext(target: Clip? = null, idx: Int = -1) {
         if (!running) return
         val s = surface ?: return
         main.removeCallbacks(nextClip)
         releasePlayer()
         video.animate().cancel(); video.alpha = 0f
         labels.animate().cancel(); labels.alpha = 0f
+        labelsOn = false
+        revealed = false
         fading = false
         lastPos = -1
         stuckSince = 0
         startedAt = SystemClock.elapsedRealtime()
         // Nothing reachable (no internet): only the clock, and another try in a minute.
         if (fails >= 6) { fails = 0; main.postDelayed(nextClip, 60_000); return }
-        val c = try { Aerials.next(context) } catch (_: Exception) { return }
+        val c = if (target != null) { histPos = idx; target } else {
+            val n = try { Aerials.next(context) } catch (_: Exception) { return }
+            history.add(n)
+            if (history.size > 30) history.removeAt(0)
+            histPos = history.size - 1
+            n
+        }
         clip = c
         val f = Aerials.file(context, c).takeIf { it.exists() }
         source = f
@@ -316,8 +388,10 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         country.text = c.country.uppercase(Locale("ru"))
         country.visibility = if (c.country.isEmpty()) View.GONE else View.VISIBLE
         labels.requestLayout()
-        video.animate().alpha(1f).setDuration(1400).start()
-        labels.animate().alpha(1f).setStartDelay(1200).setDuration(1400).start()
+        revealed = true
+        video.animate().cancel()
+        video.animate().alpha(1f).setStartDelay(0).setDuration(1200).start()
+        syncLabels()
     }
 
     /** Fills the screen without stretching, if a clip isn't exactly 16:9. */
@@ -337,6 +411,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             if (!running) return
             clock.text = timeFmt.format(Clock.now())
             nowPlaying.update(Media.current(context))
+            syncLabels()
             val p = player
             val now = SystemClock.elapsedRealtime()
             try {
@@ -348,7 +423,6 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
                     if (!fading && p.duration > 4000 && left in 1..1600) {
                         fading = true
                         video.animate().alpha(0f).setDuration(1200).start()
-                        labels.animate().alpha(0f).setStartDelay(0).setDuration(800).start()
                     }
                     // Stuck on a slow connection for 20 seconds: move on.
                     if (pos != lastPos) { lastPos = pos; stuckSince = now }

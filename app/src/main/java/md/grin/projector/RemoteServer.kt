@@ -89,7 +89,9 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 send(out, 200, "image/png", ctx.assets.open(name).use { it.readBytes() })
             }
             "/api/state" -> ok(out, state())
-            "/api/key" -> ok(out, json("ok" to Control.key(ctx, q("k"))))
+            "/api/key" -> ok(out, json("ok" to (Aerials.remote(q("k")) || Control.key(ctx, q("k")))))
+            // A finger on the phone's touchpad: brings the screensaver's place name back.
+            "/api/touch" -> ok(out, json("ok" to Aerials.remote("touch")))
             "/api/vol" -> {
                 val r = if (q("set").isNotEmpty()) Control.setVolume(ctx, q("set").toIntOrNull() ?: 0) else Control.volume(ctx, q("d"))
                 ok(out, json("ok" to r))

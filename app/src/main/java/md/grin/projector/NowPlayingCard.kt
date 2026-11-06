@@ -24,7 +24,7 @@ import kotlin.math.sin
 class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
     private val art = ImageView(ctx)
     private val artBox = FrameLayout(ctx)
-    private val placeholder = Ui.icon(ctx, R.drawable.ic_music, 28, 0xB3FFFFFF.toInt())
+    private val placeholder = Ui.icon(ctx, R.drawable.ic_music, 20, 0xB3FFFFFF.toInt())
     private val title: TextView
     private val artist: TextView
     private val elapsed: TextView
@@ -39,46 +39,46 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         orientation = VERTICAL
         background = GradientDrawable().apply {
             setColor(0x8C1C1C1E.toInt())
-            cornerRadius = Ui.pxf(26)
+            cornerRadius = Ui.pxf(18)
             setStroke(Ui.px(1), 0x24FFFFFF)
         }
-        setPadding(Ui.px(18), Ui.px(18), Ui.px(18), Ui.px(16))
+        setPadding(Ui.px(12), Ui.px(12), Ui.px(12), Ui.px(10))
         alpha = 0f
         visibility = View.GONE
 
         // Cover with rounded corners, like the iOS lock screen.
         artBox.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFF4A4F5A.toInt(), 0xFF2A2D35.toInt())).apply {
-            cornerRadius = Ui.pxf(12)
+            cornerRadius = Ui.pxf(8)
         }
         artBox.clipToOutline = true
         art.scaleType = ImageView.ScaleType.CENTER_CROP
-        artBox.addView(placeholder, FrameLayout.LayoutParams(Ui.px(28), Ui.px(28), Gravity.CENTER))
+        artBox.addView(placeholder, FrameLayout.LayoutParams(Ui.px(20), Ui.px(20), Gravity.CENTER))
         artBox.addView(art, FrameLayout.LayoutParams(Ui.MATCH, Ui.MATCH))
 
-        title = Ui.text(ctx, "", 19, 600, Color.WHITE)
-        artist = Ui.text(ctx, "", 16, 500, 0xB3FFFFFF.toInt())
+        title = Ui.text(ctx, "", 14, 600, Color.WHITE)
+        artist = Ui.text(ctx, "", 12, 500, 0xB3FFFFFF.toInt())
         val texts = Ui.col(ctx).apply {
             addView(title)
-            addView(artist, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(4) })
+            addView(artist, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(2) })
         }
 
         val top = Ui.row(ctx).apply {
-            addView(artBox, Ui.lp(Ui.px(64), Ui.px(64)))
-            addView(texts, Ui.lp(0, Ui.WRAP, 1f).apply { leftMargin = Ui.px(14); rightMargin = Ui.px(10) })
-            addView(eq, Ui.lp(Ui.px(22), Ui.px(20)))
+            addView(artBox, Ui.lp(Ui.px(42), Ui.px(42)))
+            addView(texts, Ui.lp(0, Ui.WRAP, 1f).apply { leftMargin = Ui.px(10); rightMargin = Ui.px(8) })
+            addView(eq, Ui.lp(Ui.px(15), Ui.px(13)))
         }
         addView(top, Ui.lp(Ui.MATCH, Ui.WRAP))
 
-        addView(bar, Ui.lp(Ui.MATCH, Ui.px(5)).apply { topMargin = Ui.px(16) })
+        addView(bar, Ui.lp(Ui.MATCH, Ui.px(3)).apply { topMargin = Ui.px(10) })
 
-        elapsed = Ui.text(ctx, "0:00", 13, 600, 0x99FFFFFF.toInt())
-        remaining = Ui.text(ctx, "", 13, 600, 0x99FFFFFF.toInt())
+        elapsed = Ui.text(ctx, "0:00", 10, 600, 0x99FFFFFF.toInt())
+        remaining = Ui.text(ctx, "", 10, 600, 0x99FFFFFF.toInt())
         val times = Ui.row(ctx).apply {
             addView(elapsed)
             addView(Ui.flex(ctx))
             addView(remaining)
         }
-        addView(times, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(6) })
+        addView(times, Ui.lp(Ui.MATCH, Ui.WRAP).apply { topMargin = Ui.px(4) })
     }
 
     /** Shows the card for what's playing, hides it when nothing is. */
@@ -111,7 +111,7 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         if (shown) return
         shown = true
         visibility = View.VISIBLE
-        translationY = -Ui.pxf(16)
+        translationY = -Ui.pxf(10)
         animate().cancel()
         animate().alpha(1f).translationY(0f).setDuration(600).start()
     }
@@ -121,7 +121,7 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         if (!shown) return
         shown = false
         animate().cancel()
-        animate().alpha(0f).translationY(-Ui.pxf(16)).setDuration(500).withEndAction { if (!shown) visibility = View.GONE }.start()
+        animate().alpha(0f).translationY(-Ui.pxf(10)).setDuration(500).withEndAction { if (!shown) visibility = View.GONE }.start()
     }
 
     private fun mmss(ms: Long): String {

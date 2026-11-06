@@ -2,6 +2,7 @@ package md.grin.projector
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Outline
 import android.os.Bundle
@@ -20,31 +21,35 @@ import md.grin.projector.Ui.WRAP
 import md.grin.projector.Ui.px
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
+/**
+ * The home screen, visionOS-style: a glass window floating in a softly lit room, a small "Главная" ornament on top,
+ * a column of shortcuts on the left. Inside: greeting, weather and time, three app tiles, a big player,
+ * and the Settings and Apps cards.
+ */
 class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private lateinit var clock: TextView
     private lateinit var date: TextView
     private lateinit var greet: TextView
     private lateinit var weatherIcon: ImageView
+    private lateinit var weatherTemp: TextView
     private lateinit var weatherText: TextView
     private lateinit var cover: ImageView
-    private lateinit var coverIcon: ImageView
     private lateinit var trackTitle: TextView
     private lateinit var trackArtist: TextView
     private lateinit var trackSource: TextView
-    private lateinit var trackTime: TextView
+    private lateinit var trackElapsed: TextView
+    private lateinit var trackLeft: TextView
     private lateinit var progress: RoundBar
     private lateinit var playIcon: ImageView
-    private lateinit var tilesRow: LinearLayout
+    private lateinit var tilesBox: LinearLayout
     private var firstTile: View? = null
 
     private val mediaChanged: () -> Unit = { renderMedia() }
     private val tick = object : Runnable {
         override fun run() {
-            if (Ui.isNightNow() != Ui.night) switchTheme()
             renderClock()
             updateProgress()
             main.postDelayed(this, 1000)
@@ -55,7 +60,7 @@ class MainActivity : Activity() {
     private var tilesDirty = true
     private var lastTrim = 0L
     private val packagesChanged = object : android.content.BroadcastReceiver() {
-        override fun onReceive(c: android.content.Context, i: android.content.Intent) {
+        override fun onReceive(c: android.content.Context, i: Intent) {
             Apps.invalidate()
             tilesDirty = true
             if (App.isForeground) { renderTiles(); tilesDirty = false }
@@ -66,16 +71,16 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Sounds.init(this)
-        Ui.applyTheme(Ui.isNightNow())
+        Ui.applyTheme(true)
         setContentView(build())
-        // The root view paints the background itself; drop the window's copy to avoid drawing the screen twice.
+        // The root view paints the room itself; drop the window's copy to avoid drawing the screen twice.
         window.setBackgroundDrawable(null)
         RemoteService.start(this)
         registerReceiver(packagesChanged, android.content.IntentFilter().apply {
-            addAction(android.content.Intent.ACTION_PACKAGE_ADDED)
-            addAction(android.content.Intent.ACTION_PACKAGE_REMOVED)
-            addAction(android.content.Intent.ACTION_PACKAGE_CHANGED)
-            addAction(android.content.Intent.ACTION_PACKAGE_REPLACED)
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
             addDataScheme("package")
         })
         // System setup through ADB runs once per installed version, not on every start.
@@ -128,229 +133,253 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_MENU) { showMenu(); return true }
+        if (keyCode == KeyEvent.KEYCODE_MENU) { openSettings(); return true }
         return super.onKeyDown(keyCode, event)
     }
 
-    // ---------- layout (mockup pixels, scaled to the screen) ----------
+    private fun openSettings() {
+        startActivity(Intent(this, SettingsActivity::class.java))
+    }
+
+    // ---------- layout (mockup pixels, 1280×720, scaled to the screen) ----------
 
     private fun build(): View {
-        val root = Ui.col(this).apply {
-            setBackgroundColor(Ui.GROUND)
-            setPadding(px(56), px(34), px(56), px(30))
+        val root = FrameLayout(this).apply {
+            background = RoomDrawable()
             clipChildren = false
             clipToPadding = false
         }
-        root.addView(header(), Ui.lp(MATCH, px(76)))
-        root.addView(Ui.flex(this))
-        root.addView(topRow(), Ui.lp(MATCH, px(200)))
-        root.addView(Ui.flex(this))
-        tilesRow = Ui.row(this).apply { clipChildren = false; clipToPadding = false }
-        root.addView(tilesRow, Ui.lp(MATCH, px(196)))
-        root.addView(Ui.flex(this))
-        root.addView(nav(), LinearLayout.LayoutParams(WRAP, px(84)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+
+        // "Главная" ornament on top.
+        val top = Ui.row(this).apply {
+            background = Glass.panel(28)
+            setPadding(px(6), px(6), px(6), px(6))
+        }
+        val chip = Ui.row(this).apply {
+            background = Ui.round(0x33FFFFFF, 22)
+            setPadding(px(18), 0, px(20), 0)
+            addView(Ui.icon(this@MainActivity, R.drawable.ic_home, 18, Color.WHITE))
+            addView(Ui.text(this@MainActivity, "Главная", 15, 600, Color.WHITE), Ui.lp(WRAP, WRAP).apply { leftMargin = px(8) })
+        }
+        top.addView(chip, Ui.lp(WRAP, px(44)))
+        root.addView(top, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = px(22) })
+
+        root.addView(sideNav(), FrameLayout.LayoutParams(WRAP, WRAP).apply { leftMargin = px(36); topMargin = px(222) })
+
+        // The main glass window.
+        val win = Ui.col(this).apply {
+            background = Glass.panel(40)
+            setPadding(px(32), px(30), px(32), px(30))
+            clipChildren = false
+            clipToPadding = false
+        }
+        win.addView(header(), Ui.lp(MATCH, px(72)))
+        win.addView(Ui.flex(this))
+        val mid = Ui.row(this, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
+        tilesBox = Ui.row(this, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
+        mid.addView(tilesBox, Ui.lp(0, MATCH, 1f))
+        mid.addView(player(), Ui.lp(0, MATCH, 1f).apply { leftMargin = px(14) })
+        win.addView(mid, Ui.lp(MATCH, px(210)))
+        win.addView(Ui.flex(this))
+        win.addView(bottomRow(), Ui.lp(MATCH, px(96)))
+        root.addView(win, FrameLayout.LayoutParams(px(1040), px(506)).apply { leftMargin = px(142); topMargin = px(110) })
         return root
+    }
+
+    private fun sideNav(): View {
+        val col = Ui.col(this).apply {
+            background = Glass.panel(32)
+            setPadding(px(8), px(8), px(8), px(8))
+            clipChildren = false
+            clipToPadding = false
+        }
+        val items = listOf(
+            Triple(R.drawable.ic_home, "home", "Главная"),
+            Triple(R.drawable.ic_grid, "apps", "Все приложения"),
+            Triple(R.drawable.ic_hdmi, "hdmi", "HDMI"),
+            Triple(R.drawable.ic_cast, "cast", "Трансляция"),
+            Triple(R.drawable.ic_gear, "settings", "Настройки"),
+        )
+        items.forEachIndexed { i, (res, key, label) ->
+            val selected = key == "home"
+            val b = FrameLayout(this).apply {
+                contentDescription = label
+                Glass.focusable(this, 24, if (selected) 0x38FFFFFF else 0, 0, 1.1f)
+                addView(Ui.icon(this@MainActivity, res, 22, if (selected) Color.WHITE else Glass.TEXT2), FrameLayout.LayoutParams(px(22), px(22), Gravity.CENTER))
+                setOnClickListener {
+                    when (key) {
+                        "home" -> firstTile?.requestFocus()
+                        "settings" -> openSettings()
+                        else -> Apps.launchKey(this@MainActivity, key)
+                    }
+                }
+            }
+            col.addView(b, Ui.lp(px(48), px(48)).apply { if (i > 0) topMargin = px(6) })
+        }
+        return col
     }
 
     private fun header(): View {
         val h = Ui.row(this)
-        h.addView(Ui.circleButton(this, R.drawable.ic_menu, 64, Ui.GLASS, iconSize = 26).apply { setOnClickListener { showMenu() } }, Ui.lp(px(64), px(64)))
-        h.addView(Ui.flex(this))
-        // Time, date and weather in one larger, easy-to-read pill.
-        val pill = Ui.row(this).apply {
-            background = Ui.round(Ui.GLASS, 38)
-            setPadding(px(28), 0, px(10), 0)
-        }
-        clock = Ui.text(this, "", 36, 600).apply { letterSpacing = -0.03f }
-        pill.addView(clock)
-        pill.addView(View(this).apply { setBackgroundColor(Ui.DIVIDER) }, Ui.lp(px(1.5f), px(30)).apply { leftMargin = px(20); rightMargin = px(20) })
-        date = Ui.text(this, "", 23, 500)
-        pill.addView(date)
-        val w = Ui.row(this).apply {
-            background = Ui.round(Ui.WHITE, 28)
-            setPadding(px(16), 0, px(22), 0)
-        }
-        weatherIcon = Ui.icon(this, R.drawable.ic_cloud, 30)
-        w.addView(weatherIcon)
-        weatherText = Ui.text(this, Weather.city(this), 22, 600)
-        w.addView(weatherText, Ui.lp(WRAP, WRAP).apply { leftMargin = px(10) })
-        pill.addView(w, Ui.lp(WRAP, px(56)).apply { leftMargin = px(22) })
-        h.addView(pill, Ui.lp(WRAP, px(76)))
-        h.addView(Ui.flex(this))
-        h.addView(Ui.circleButton(this, R.drawable.ic_bell, 64, Ui.GLASS, iconSize = 26).apply { setOnClickListener { showMenu() } }, Ui.lp(px(64), px(64)))
-        return h
-    }
+        val left = Ui.col(this)
+        greet = Ui.text(this, "", 32, 700, Color.WHITE).apply { letterSpacing = -0.02f }
+        left.addView(greet, Ui.lp(MATCH, WRAP))
+        left.addView(Ui.text(this, "Что включаем?", 17, 500, Glass.TEXT2), Ui.lp(WRAP, WRAP).apply { topMargin = px(4) })
+        h.addView(left, Ui.lp(0, WRAP, 1f))
 
-    private fun topRow(): View {
-        val r = Ui.row(this, Gravity.TOP).apply { clipChildren = false }
-        val left = Ui.col(this).apply { clipChildren = false }
-        greet = Ui.text(this, "", 48, 600).apply {
-            maxLines = 2
-            letterSpacing = -0.033f
-            setLineSpacing(0f, 1.02f)
+        // Weather: a large pill.
+        val w = Ui.row(this).apply {
+            background = Glass.inner(36, 0x21FFFFFF, 0x24FFFFFF)
+            setPadding(px(12), 0, px(24), 0)
         }
-        left.addView(greet, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
-        left.addView(Ui.flex(this))
-        val chips = Ui.row(this).apply { clipChildren = false }
-        val chipDefs = listOf("Все" to "apps", "Видео" to "youtube", "Музыка" to "spotify", "Трансляция" to "cast")
-        chipDefs.forEachIndexed { i, (label, key) ->
-            val dark = i == 0
-            val c = Ui.pill(this, label, if (dark) Ui.INK else Ui.GLASS, if (dark) Ui.INVERSE else Ui.INK)
-            c.setOnClickListener { Apps.launchKey(this, key) }
-            chips.addView(c, Ui.lp(WRAP, px(48)).apply { rightMargin = px(10) })
-        }
-        left.addView(chips, Ui.lp(MATCH, px(48)))
-        r.addView(left, Ui.lp(0, MATCH, 1f).apply { rightMargin = px(32) })
-        r.addView(player(), Ui.lp(px(540), MATCH))
-        return r
+        val badge = FrameLayout(this).apply { background = Glass.circle(0xE6FFFFFF.toInt()) }
+        weatherIcon = Ui.icon(this, R.drawable.ic_cloud, 30, 0xFF4A90E2.toInt())
+        badge.addView(weatherIcon, FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
+        w.addView(badge, Ui.lp(px(48), px(48)))
+        val wt = Ui.col(this)
+        weatherTemp = Ui.text(this, "—°", 32, 700, Color.WHITE).apply { letterSpacing = -0.02f }
+        weatherText = Ui.text(this, Weather.city(this), 14, 500, Glass.TEXT2)
+        wt.addView(weatherTemp)
+        wt.addView(weatherText, Ui.lp(WRAP, WRAP).apply { topMargin = px(2) })
+        w.addView(wt, Ui.lp(WRAP, WRAP).apply { leftMargin = px(14) })
+        h.addView(w, Ui.lp(WRAP, px(72)))
+
+        // Time, larger.
+        val t = Ui.col(this).apply { gravity = Gravity.END }
+        clock = Ui.text(this, "", 44, 700, Color.WHITE).apply { letterSpacing = -0.03f; gravity = Gravity.END }
+        date = Ui.text(this, "", 15, 500, Glass.TEXT2).apply { gravity = Gravity.END }
+        t.addView(clock, Ui.lp(px(170), WRAP))
+        t.addView(date, Ui.lp(px(200), WRAP).apply { topMargin = px(6) })
+        h.addView(t, Ui.lp(WRAP, WRAP).apply { leftMargin = px(22) })
+        return h
     }
 
     private fun player(): View {
         val card = Ui.row(this).apply {
-            background = Ui.round(Ui.WHITE, 36)
-            setPadding(px(14), px(14), px(20), px(14))
+            background = Glass.inner(28)
+            setPadding(px(16), px(16), px(18), px(16))
+            clipChildren = false
+            clipToPadding = false
         }
         val art = FrameLayout(this).apply {
-            background = Ui.round(Ui.NIGHT, 26)
+            background = Glass.gradient(20, 0xFF8E6CFF.toInt(), 0xFFFF6FB1.toInt())
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.pxf(26)) }
+                override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.pxf(20)) }
             }
         }
-        art.addView(View(this).apply { background = Ui.round(Ui.NIGHT2, 75) }, FrameLayout.LayoutParams(px(150), px(150)).apply { leftMargin = px(62); topMargin = px(-50) })
-        art.addView(View(this).apply { background = Ui.round(Ui.ACCENT, 55) }, FrameLayout.LayoutParams(px(110), px(110)).apply { leftMargin = px(-20); topMargin = px(102) })
-        coverIcon = ImageView(this).apply { setImageResource(R.drawable.ic_music); imageTintList = android.content.res.ColorStateList.valueOf(Ui.GROUND) }
-        art.addView(coverIcon, FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER))
+        art.addView(Ui.icon(this, R.drawable.ic_music, 64, 0xE6FFFFFF.toInt()), FrameLayout.LayoutParams(px(64), px(64), Gravity.CENTER))
         cover = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         art.addView(cover, FrameLayout.LayoutParams(MATCH, MATCH))
-        card.addView(art, Ui.lp(px(172), px(172)))
+        card.addView(art, Ui.lp(px(178), px(178)))
 
-        val info = Ui.col(this)
-        trackSource = Ui.text(this, "Сейчас играет", 13, 500, Ui.CHIP).apply {
-            background = Ui.round(Ui.WHITE, 13, 1, Ui.LINE)
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(px(12), 0, px(12), 0)
-        }
-        info.addView(trackSource, Ui.lp(WRAP, px(26)))
-        trackTitle = Ui.text(this, "Ничего не играет", 24, 600).apply { letterSpacing = -0.02f }
-        info.addView(trackTitle, Ui.lp(MATCH, WRAP).apply { topMargin = px(12) })
-        trackArtist = Ui.text(this, "Включи музыку в Spotify", 15, 400, Ui.MUTED)
-        info.addView(trackArtist, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
+        val info = Ui.col(this).apply { clipChildren = false; clipToPadding = false }
+        trackSource = Ui.text(this, "СЕЙЧАС ИГРАЕТ", 12, 600, Glass.TEXT3).apply { letterSpacing = 0.08f }
+        info.addView(trackSource, Ui.lp(MATCH, WRAP).apply { topMargin = px(2) })
+        trackTitle = Ui.text(this, "Ничего не играет", 24, 700, Color.WHITE).apply { letterSpacing = -0.01f }
+        info.addView(trackTitle, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
+        trackArtist = Ui.text(this, "Включи музыку в Spotify", 15, 500, Glass.TEXT2)
+        info.addView(trackArtist, Ui.lp(MATCH, WRAP).apply { topMargin = px(4) })
         info.addView(Ui.flex(this))
-        progress = RoundBar(this, Ui.TRACK, Ui.INK)
+        progress = RoundBar(this, 0x38FFFFFF, Color.WHITE)
         info.addView(progress, Ui.lp(MATCH, px(5)))
-        val ctrl = Ui.row(this)
-        trackTime = Ui.text(this, "", 13, 500, Ui.MUTED)
-        // A fixed width: the time changes every second, and a text that sizes itself would re-measure the screen each time.
-        ctrl.addView(trackTime, Ui.lp(px(130), WRAP))
-        ctrl.addView(Ui.flex(this))
-        ctrl.addView(Ui.circleButton(this, R.drawable.ic_prev, 44, Ui.SOFT, iconSize = 16).apply { setOnClickListener { Media.command("prev") } }, Ui.lp(px(44), px(44)))
-        val play = Ui.circleButton(this, R.drawable.ic_pause, 52, Ui.ACCENT, Ui.ON_ACCENT, iconSize = 18).apply {
+        val times = Ui.row(this)
+        trackElapsed = Ui.text(this, "", 12, 500, Glass.TEXT3)
+        trackLeft = Ui.text(this, "", 12, 500, Glass.TEXT3).apply { gravity = Gravity.END }
+        // Fixed widths: the times tick every second without re-measuring the screen.
+        times.addView(trackElapsed, Ui.lp(px(70), WRAP))
+        times.addView(Ui.flex(this))
+        times.addView(trackLeft, Ui.lp(px(70), WRAP))
+        info.addView(times, Ui.lp(MATCH, WRAP).apply { topMargin = px(6) })
+        val ctrl = Ui.row(this, Gravity.CENTER).apply { clipChildren = false }
+        ctrl.addView(Ui.circleButton(this, R.drawable.ic_prev, 48, 0x1FFFFFFF, Color.WHITE, iconSize = 18).apply {
+            contentDescription = "Предыдущий"
+            setOnClickListener { Media.command("prev") }
+        }, Ui.lp(px(48), px(48)))
+        val play = Ui.circleButton(this, R.drawable.ic_pause, 58, 0xF2FFFFFF.toInt(), 0xFF1C1C1E.toInt(), iconSize = 20).apply {
+            contentDescription = "Пауза"
             setOnClickListener { if (!Media.command("play")) Apps.launchKey(this@MainActivity, "spotify") }
         }
         playIcon = play.getChildAt(0) as ImageView
-        ctrl.addView(play, Ui.lp(px(52), px(52)).apply { leftMargin = px(8); rightMargin = px(8) })
-        ctrl.addView(Ui.circleButton(this, R.drawable.ic_next, 44, Ui.SOFT, iconSize = 16).apply { setOnClickListener { Media.command("next") } }, Ui.lp(px(44), px(44)))
-        info.addView(ctrl, Ui.lp(MATCH, px(52)).apply { topMargin = px(10) })
-        card.addView(info, Ui.lp(0, MATCH, 1f).apply { leftMargin = px(18) })
+        ctrl.addView(play, Ui.lp(px(58), px(58)).apply { leftMargin = px(18); rightMargin = px(18) })
+        ctrl.addView(Ui.circleButton(this, R.drawable.ic_next, 48, 0x1FFFFFFF, Color.WHITE, iconSize = 18).apply {
+            contentDescription = "Следующий"
+            setOnClickListener { Media.command("next") }
+        }, Ui.lp(px(48), px(48)))
+        info.addView(ctrl, Ui.lp(MATCH, px(58)).apply { topMargin = px(6) })
+        card.addView(info, Ui.lp(0, MATCH, 1f).apply { leftMargin = px(20) })
         return card
     }
 
+    private fun bottomRow(): View {
+        val row = Ui.row(this).apply { clipChildren = false; clipToPadding = false }
+        val settingsIcon = FrameLayout(this).apply {
+            background = Ui.round(0xFF8E8E93.toInt(), 16)
+            addView(Ui.icon(this@MainActivity, R.drawable.ic_gear, 30, Color.WHITE), FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
+        }
+        row.addView(bigCard(settingsIcon, "Настройки", "Wi‑Fi, Bluetooth, звук, экран") { openSettings() }, Ui.lp(0, MATCH, 1f))
+        row.addView(bigCard(AppsGlyph(this), "Приложения", "Все программы на проекторе") { Apps.launchKey(this, "apps") },
+            Ui.lp(0, MATCH, 1f).apply { leftMargin = px(14) })
+        return row
+    }
+
+    private fun bigCard(icon: View, title: String, sub: String, onClick: () -> Unit): View =
+        Ui.row(this).apply {
+            setPadding(px(18), 0, px(22), 0)
+            Glass.focusable(this, 26, lift = 1.03f)
+            contentDescription = title
+            addView(icon, Ui.lp(px(58), px(58)))
+            val t = Ui.col(this@MainActivity)
+            t.addView(Ui.text(this@MainActivity, title, 20, 600, Color.WHITE))
+            t.addView(Ui.text(this@MainActivity, sub, 14, 500, Glass.TEXT2), Ui.lp(WRAP, WRAP).apply { topMargin = px(3) })
+            addView(t, Ui.lp(0, WRAP, 1f).apply { leftMargin = px(16) })
+            addView(Ui.icon(this@MainActivity, R.drawable.ic_chevron, 22, 0x80FFFFFF.toInt()))
+            setOnClickListener { onClick() }
+        }
+
+    private val tileColors = mapOf("youtube" to 0xFFFF3B30.toInt(), "netflix" to 0xFFC4161C.toInt(), "spotify" to 0xFF1FB257.toInt())
+
     private fun renderTiles() {
-        tilesRow.removeAllViews()
+        tilesBox.removeAllViews()
         firstTile = null
-        Apps.tiles.forEachIndexed { i, spec ->
+        Apps.tiles.filter { it.key in tileColors }.forEachIndexed { i, spec ->
             val entry = Apps.resolve(this, spec)
-            val showAppIcon = entry != null && !spec.dark && spec.key != "hdmi"
-            val appIcon = if (showAppIcon) Apps.hiResIcon(this, entry!!) else null
-            val brand = appIcon?.let { Apps.mainColor(this, entry!!, it) }
-            val cardBg = when {
-                spec.dark -> Ui.INK
-                brand != null -> blend(Ui.WHITE, brand, if (Ui.night) 0.22f else 0.13f)
-                else -> Ui.WHITE
-            }
+            val appIcon = if (entry != null) Apps.hiResIcon(this, entry) else null
             val tile = Ui.col(this).apply {
-                setPadding(px(20), px(20), px(20), px(20))
-                Ui.focusable(this, cardBg, 34, if (spec.dark) Ui.ACCENT else Ui.INK)
+                setPadding(px(18), px(18), px(18), px(18))
+                Glass.focusable(this, 28)
+                contentDescription = spec.label
                 setOnClickListener {
                     // The app list is refreshed by the install/remove broadcast; re-reading it on every press slowed launches.
                     if (Apps.resolve(this@MainActivity, spec) == null) Apps.invalidate()
-                    if (Apps.resolve(this@MainActivity, spec) == null && spec.key != "hdmi") pickApp(spec)
+                    if (Apps.resolve(this@MainActivity, spec) == null) pickApp(spec)
                     else Apps.launchKey(this@MainActivity, spec.key)
                 }
                 setOnLongClickListener { pickApp(spec); true }
             }
             if (appIcon != null) {
-                // The app's own icon, large and crisp, with rounded corners like on a phone home screen.
+                // The app's own icon, crisp, with rounded corners like on a phone home screen.
                 val img = ImageView(this).apply {
                     setImageDrawable(appIcon)
                     scaleType = ImageView.ScaleType.FIT_CENTER
                     clipToOutline = true
                     outlineProvider = object : ViewOutlineProvider() {
-                        override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.pxf(16)) }
+                        override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.pxf(15)) }
                     }
                 }
-                tile.addView(img, Ui.lp(px(64), px(64)))
+                tile.addView(img, Ui.lp(px(52), px(52)))
             } else {
-                val iconBox = FrameLayout(this).apply { background = Ui.round(if (spec.dark) Ui.ACCENT else Ui.SOFT, 18) }
-                iconBox.addView(Ui.icon(this, spec.fallbackIcon, 30, if (spec.dark) Ui.ON_ACCENT else Ui.INK), FrameLayout.LayoutParams(px(30), px(30), Gravity.CENTER))
-                tile.addView(iconBox, Ui.lp(px(64), px(64)))
+                val box = FrameLayout(this).apply { background = Ui.round(tileColors[spec.key] ?: 0xFF8E8E93.toInt(), 15) }
+                box.addView(Ui.icon(this, spec.fallbackIcon, 26, Color.WHITE), FrameLayout.LayoutParams(px(26), px(26), Gravity.CENTER))
+                tile.addView(box, Ui.lp(px(52), px(52)))
             }
             tile.addView(Ui.flex(this))
-            tile.addView(Ui.text(this, spec.label, 19, 600, if (spec.dark) Ui.INVERSE else Ui.INK).apply { letterSpacing = -0.015f })
+            tile.addView(Ui.text(this, spec.label, 17, 600, Color.WHITE))
             val hint = if (entry == null && spec.candidates.isNotEmpty()) "Нажми, чтобы выбрать" else spec.hint
-            tile.addView(Ui.text(this, hint, 14, 400, if (spec.dark) Ui.INVERSE_SUB else Ui.MUTED), Ui.lp(WRAP, WRAP).apply { topMargin = px(4) })
-            tilesRow.addView(tile, Ui.lp(0, MATCH, 1f).apply { if (i > 0) leftMargin = px(16) })
+            tile.addView(Ui.text(this, hint, 13, 500, Glass.TEXT2), Ui.lp(WRAP, WRAP).apply { topMargin = px(3) })
+            tilesBox.addView(tile, Ui.lp(0, MATCH, 1f).apply { if (i > 0) leftMargin = px(14) })
             if (i == 0) firstTile = tile
         }
-    }
-
-    private fun blend(a: Int, b: Int, t: Float): Int {
-        fun ch(s: Int) = (((a shr s) and 0xFF) + ((((b shr s) and 0xFF) - ((a shr s) and 0xFF)) * t)).toInt()
-        return Color.rgb(ch(16), ch(8), ch(0))
-    }
-
-    private fun nav(): View {
-        val n = Ui.row(this).apply {
-            background = Ui.round(Ui.WHITE, 42)
-            setPadding(px(11), px(11), px(11), px(11))
-            clipChildren = false
-            clipToPadding = false
-        }
-        val home = Ui.row(this).apply {
-            setPadding(px(20), 0, px(28), 0)
-            Ui.focusable(this, Ui.SOFT, 31)
-            addView(Ui.icon(this@MainActivity, R.drawable.ic_home, 26))
-            addView(Ui.text(this@MainActivity, "Главная", 20, 600), Ui.lp(WRAP, WRAP).apply { leftMargin = px(12) })
-            setOnClickListener { firstTile?.requestFocus() }
-        }
-        n.addView(home, Ui.lp(WRAP, px(62)))
-        val items = listOf(R.drawable.ic_grid to "apps", R.drawable.ic_hdmi to "hdmi", R.drawable.ic_cast to "cast", R.drawable.ic_gear to "settings")
-        for ((res, key) in items) {
-            val b = FrameLayout(this).apply {
-                Ui.focusable(this, Ui.WHITE, 31)
-                addView(Ui.icon(this@MainActivity, res, 26, Ui.SUBTLE), FrameLayout.LayoutParams(px(26), px(26), Gravity.CENTER))
-                setOnClickListener { Apps.launchKey(this@MainActivity, key) }
-            }
-            n.addView(b, Ui.lp(px(72), px(62)).apply { leftMargin = px(8) })
-        }
-        return n
-    }
-
-    /** Day ↔ night: rebuild the screen in the new palette and fade it in. */
-    private fun switchTheme() {
-        Ui.applyTheme(!Ui.night)
-        val root = build()
-        root.alpha = 0f
-        setContentView(root)
-        renderTiles()
-        lastMinute = ""
-        mediaKey = Unit
-        shownArt = null
-        renderMedia()
-        Weather.peek()?.let { showWeather(it) }
-        firstTile?.requestFocus()
-        root.animate().alpha(1f).setDuration(600).start()
     }
 
     // ---------- live data ----------
@@ -370,17 +399,12 @@ class MainActivity : Activity() {
         val h = Calendar.getInstance(Clock.zone).apply { time = now }.get(Calendar.HOUR_OF_DAY)
         val hello = when (h) { in 5..11 -> "Доброе утро"; in 12..17 -> "Добрый день"; in 18..22 -> "Добрый вечер"; else -> "Доброй ночи" }
         val name = getSharedPreferences("home", MODE_PRIVATE).getString("name", "Эрнест")
-        val text = "$hello, $name,\nчто включаем?"
-        if (greet.text.toString() != text) {
-            val sp = android.text.SpannableString(text)
-            val start = text.indexOf(name!!)
-            sp.setSpan(ItalicSpan(Ui.font(this, 600, true)), start, start + name.length + 1, 0)
-            greet.text = sp
-        }
+        val text = "$hello, $name"
+        if (greet.text.toString() != text) greet.text = text
     }
 
     private var mediaKey: Any? = Unit
-    private var lastNp: NowPlaying? = null
+    private var shownArt: android.graphics.Bitmap? = null
 
     /** Updates only the progress bar and time each second; the rest of the card waits for real changes. */
     private fun updateProgress() {
@@ -388,42 +412,46 @@ class MainActivity : Activity() {
         val key = np?.let { listOf(it.title, it.artist, it.playing, it.art) }
         if (key != mediaKey) { renderMedia(); return }
         if (np == null || !np.playing || np.duration <= 0) return
-        setTime("${fmt(np.position)} / ${fmt(np.duration)}")
-        setProgress(np.position.toFloat() / np.duration)
+        setTimes(np.position, np.duration)
     }
 
     private fun renderMedia() {
         val np = Media.current(this)
-        lastNp = np
         mediaKey = np?.let { listOf(it.title, it.artist, it.playing, it.art) }
         if (np == null) {
-            trackSource.text = if (Media.hasAccess(this)) "Сейчас играет" else "Плеер ждёт доступа"
-            trackTitle.text = "Ничего не играет"
-            trackArtist.text = "Включи музыку в Spotify"
-            setTime("")
+            setText(trackSource, if (Media.hasAccess(this)) "СЕЙЧАС ИГРАЕТ" else "ПЛЕЕР ЖДЁТ ДОСТУПА")
+            setText(trackTitle, "Ничего не играет")
+            setText(trackArtist, "Включи музыку в Spotify")
+            setTimes(0, 0)
             cover.visibility = View.GONE
+            shownArt = null
             playIcon.setImageResource(R.drawable.ic_play)
-            setProgress(0f)
             return
         }
-        trackSource.text = "Сейчас играет · ${np.source}"
-        trackTitle.text = np.title
-        trackArtist.text = np.artist
+        setText(trackSource, "СЕЙЧАС ИГРАЕТ · ${np.source.uppercase(Locale("ru"))}")
+        setText(trackTitle, np.title)
+        setText(trackArtist, np.artist)
         if (np.art != null) {
             if (np.art !== shownArt) cover.setImageBitmap(np.art)
             cover.visibility = View.VISIBLE
         } else cover.visibility = View.GONE
         shownArt = np.art
         playIcon.setImageResource(if (np.playing) R.drawable.ic_pause else R.drawable.ic_play)
-        setTime(if (np.duration > 0) "${fmt(np.position)} / ${fmt(np.duration)}" else "")
-        setProgress(if (np.duration > 0) np.position.toFloat() / np.duration else 0f)
+        setTimes(np.position, np.duration)
     }
 
-    private var shownArt: android.graphics.Bitmap? = null
+    private fun setTimes(pos: Long, dur: Long) {
+        if (dur <= 0) {
+            setText(trackElapsed, ""); setText(trackLeft, ""); progress.fraction = 0f
+            return
+        }
+        val p = pos.coerceIn(0, dur)
+        setText(trackElapsed, fmt(p))
+        setText(trackLeft, "−" + fmt(dur - p))
+        progress.fraction = p.toFloat() / dur
+    }
 
-    private fun setProgress(f: Float) { progress.fraction = f }
-
-    private fun setTime(s: String) { if (trackTime.text.toString() != s) trackTime.text = s }
+    private fun setText(v: TextView, s: String) { if (v.text.toString() != s) v.text = s }
 
     private fun fmt(ms: Long): String { val s = ms / 1000; return "%d:%02d".format(s / 60, s % 60) }
 
@@ -437,7 +465,16 @@ class MainActivity : Activity() {
 
     private fun showWeather(w: WeatherNow) {
         weatherIcon.setImageResource(w.icon)
-        weatherText.text = "${w.temp}° · ${w.city}"
+        setText(weatherTemp, "${w.temp}°")
+        val sky = when (w.code) {
+            0, 1 -> "Ясно"
+            45, 48 -> "Туман"
+            in 51..67, in 80..82 -> "Дождь"
+            in 95..99 -> "Гроза"
+            in 71..77, 85, 86 -> "Снег"
+            else -> "Облачно"
+        }
+        setText(weatherText, "$sky · ${w.city}")
     }
 
     // ---------- dialogs ----------
@@ -452,89 +489,4 @@ class MainActivity : Activity() {
             }
             .show()
     }
-
-    private fun showMenu() {
-        val adb = if (Adb.connected) "подключено" else "не подключено (${Adb.lastError ?: "ждёт разрешения"})"
-        val player = if (Media.hasAccess(this)) "есть доступ" else "нет доступа"
-        val level = Picture.brightness(this)
-        val warm = Picture.isWarm(this)
-        val volUi = getSharedPreferences("home", MODE_PRIVATE).getString("volume_ui", null)
-        val kbOk = TvKeyboard.isDefault(this)
-        val lastOff = getSharedPreferences("home", MODE_PRIVATE).getString("last_off", null)
-        val lastCrash = getSharedPreferences("home", MODE_PRIVATE).getString("last_crash", null)
-        AlertDialog.Builder(this, R.style.Dialog)
-            .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
-                "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная (" + (android.provider.Settings.Secure.getString(contentResolver, "default_input_method") ?: "?").substringBefore('/') + ")") +
-                (lastOff?.let { "\nПоследнее выключение: $it" } ?: "") +
-                (getSharedPreferences("home", MODE_PRIVATE).getStringSet("quieted", null)?.takeIf { it.isNotEmpty() }?.let { "\nОтключены всплывающие окна: ${it.joinToString()}" } ?: "") +
-                (lastCrash?.let { "\nОшибка: $it" } ?: "") +
-                (volUi?.let { "\nРодная громкость: $it" } ?: ""))
-            .setItems(arrayOf(
-                "Яркость: $level% — изменить (плавно — ползунком на айфоне)",
-                if (warm) "Night Shift: включён — выключить" else "Night Shift: выключен — включить",
-                if (SleepTimer.isOn(this)) "Сон после 23:00 (30 мин без нажатий): включён — выключить" else "Сон после 23:00: выключен — включить",
-                "Показать заставку",
-                if (Aerials.isOn(this)) "Заставка через 3 мин на главном экране: включена — выключить" else "Заставка на главном экране: выключена — включить",
-                "Настройки проектора",
-                "Выбрать клавиатуру вручную",
-            )) { _, i ->
-                when (i) {
-                    0 -> {
-                        // Quick steps from the remote: 100 → 70 → 45 → 20 → 100
-                        val next = when { level > 70 -> 70; level > 45 -> 45; level > 20 -> 20; else -> 100 }
-                        Picture.setBrightness(applicationContext, next)
-                        android.widget.Toast.makeText(this, "Яркость $next%", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    1 -> Thread {
-                        val ok = Picture.setWarm(applicationContext, !warm)
-                        main.post { android.widget.Toast.makeText(this, if (ok) (if (!warm) "Night Shift включён" else "Night Shift выключен") else "Нужно разрешение на показ поверх окон: «Настроить автоматически»", android.widget.Toast.LENGTH_SHORT).show() }
-                    }.start()
-                    2 -> {
-                        val on = !SleepTimer.isOn(this)
-                        SleepTimer.setOn(this, on)
-                        android.widget.Toast.makeText(this, if (on) "Сон после 23:00 включён" else "Сон выключен", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    3 -> Aerials.show(this)
-                    4 -> {
-                        val on = !Aerials.isOn(this)
-                        Aerials.setOn(this, on)
-                        android.widget.Toast.makeText(this, if (on) "Заставка включена" else "Заставка выключена", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    5 -> Apps.openSettings(this)
-                    6 -> {
-                        // System picker: choose "Projector Home". If it isn't listed, open the list of keyboards to switch it on.
-                        try {
-                            Thread { Adb.useOurKeyboard(applicationContext) }.start()
-                            getSystemService(android.view.inputmethod.InputMethodManager::class.java).showInputMethodPicker()
-                        } catch (_: Exception) {
-                            try { startActivity(android.content.Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS)) } catch (_: Exception) {}
-                        }
-                    }
-                }
-            }
-            .setPositiveButton("Настроить автоматически") { _, _ ->
-                Thread {
-                    val ok = Adb.setup(applicationContext)
-                    main.post {
-                        Media.attach(applicationContext)
-                        android.widget.Toast.makeText(this, if (ok) "Готово" else "Не вышло: ${Adb.lastError}", android.widget.Toast.LENGTH_LONG).show()
-                    }
-                }.start()
-            }
-            .setNeutralButton("Обновить") { _, _ ->
-                android.widget.Toast.makeText(this, "Проверяю обновления…", android.widget.Toast.LENGTH_SHORT).show()
-                Thread {
-                    Updater.check(applicationContext)
-                    main.post { android.widget.Toast.makeText(this, Updater.status, android.widget.Toast.LENGTH_LONG).show() }
-                }.start()
-            }
-            .setNegativeButton("Закрыть", null)
-            .show()
-    }
-}
-
-/** Draws part of a text in another typeface (the italic name in the greeting). */
-class ItalicSpan(private val tf: android.graphics.Typeface) : android.text.style.MetricAffectingSpan() {
-    override fun updateDrawState(tp: android.text.TextPaint) { tp.typeface = tf }
-    override fun updateMeasureState(tp: android.text.TextPaint) { tp.typeface = tf }
 }

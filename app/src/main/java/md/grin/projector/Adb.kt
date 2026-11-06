@@ -213,6 +213,8 @@ object Adb {
         shell(ctx, "appops set $pkg SYSTEM_ALERT_WINDOW allow")
         // Lets the remote know which app is on screen without the heavy `dumpsys`.
         shell(ctx, "appops set $pkg GET_USAGE_STATS allow")
+        // Lets Settings › Wi‑Fi show the network's name.
+        shell(ctx, "pm grant $pkg android.permission.ACCESS_FINE_LOCATION")
         quietSystem(ctx)
         shell(ctx, "settings put global window_animation_scale 0.5")
         shell(ctx, "settings put global transition_animation_scale 0.5")

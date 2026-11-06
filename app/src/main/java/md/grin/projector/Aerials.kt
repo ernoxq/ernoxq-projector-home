@@ -267,9 +267,15 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         addView(nowPlaying, LayoutParams(Ui.px(290), Ui.WRAP, Gravity.TOP or Gravity.END).apply {
             topMargin = Ui.px(32); rightMargin = Ui.px(32)
         })
-        clock = caption(22, 500).apply { alpha = 0.85f }
-        addView(clock, LayoutParams(Ui.WRAP, Ui.WRAP, Gravity.BOTTOM or Gravity.END).apply {
-            rightMargin = Ui.px(48); bottomMargin = Ui.px(38)
+        // The time in a small glass pill, like the rest of the system.
+        clock = caption(20, 600).apply {
+            gravity = Gravity.CENTER
+            background = Glass.panel(22)
+            setPadding(Ui.px(18), 0, Ui.px(18), 0)
+            setShadowLayer(0f, 0f, 0f, 0)
+        }
+        addView(clock, LayoutParams(Ui.WRAP, Ui.px(44), Gravity.BOTTOM or Gravity.END).apply {
+            rightMargin = Ui.px(48); bottomMargin = Ui.px(36)
         })
     }
 

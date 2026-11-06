@@ -19,13 +19,13 @@ class AllAppsActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Sounds.init(this)
-        Ui.applyTheme(Ui.isNightNow())
+        Ui.applyTheme(true)
         val apps = Apps.all(this)
         val root = Ui.col(this).apply {
-            setBackgroundColor(Ui.GROUND)
+            background = RoomDrawable()
             setPadding(px(56), px(40), px(56), 0)
         }
-        root.addView(Ui.text(this, "Все приложения", 44, 600, Ui.INK).apply { letterSpacing = -0.03f })
+        root.addView(Ui.text(this, "Все приложения", 40, 700, Color.WHITE).apply { letterSpacing = -0.02f })
         val grid = GridView(this).apply {
             numColumns = 6
             horizontalSpacing = px(16)
@@ -47,15 +47,15 @@ class AllAppsActivity : Activity() {
                     }
                     val card = Ui.col(this@AllAppsActivity).apply {
                         setPadding(px(18), px(18), px(18), px(16))
-                        background = Ui.round(Ui.WHITE, 28)
+                        background = Glass.inner(28)
                         layoutParams = android.widget.AbsListView.LayoutParams(MATCH, px(150))
                     }
-                    val box = FrameLayout(this@AllAppsActivity).apply { background = Ui.round(Ui.SOFT, 16) }
+                    val box = FrameLayout(this@AllAppsActivity).apply { background = Ui.round(0x24FFFFFF, 16) }
                     val icon = ImageView(this@AllAppsActivity).apply { setImageDrawable(Apps.icon(this@AllAppsActivity, a)) }
                     box.addView(icon, FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER))
                     card.addView(box, Ui.lp(px(56), px(56)))
                     card.addView(Ui.flex(this@AllAppsActivity))
-                    val label = Ui.text(this@AllAppsActivity, a.label, 17, 600)
+                    val label = Ui.text(this@AllAppsActivity, a.label, 17, 600, Color.WHITE)
                     card.addView(label)
                     card.tag = Holder(icon, label)
                     return card
@@ -67,8 +67,8 @@ class AllAppsActivity : Activity() {
                 var last: View? = null
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, p: Int, id: Long) {
                     last?.animate()?.scaleX(1f)?.scaleY(1f)?.setDuration(140)?.start()
-                    last?.background = Ui.round(Ui.WHITE, 28)
-                    view?.background = Ui.round(Ui.WHITE, 28, 4, Ui.INK)
+                    last?.background = Glass.inner(28)
+                    view?.background = Ui.round(0x47FFFFFF, 28, 2, 0xA6FFFFFF.toInt())
                     view?.animate()?.scaleX(1.05f)?.scaleY(1.05f)?.setDuration(160)?.start()
                     last = view
                     Sounds.tick()
@@ -78,6 +78,7 @@ class AllAppsActivity : Activity() {
         }
         root.addView(grid, Ui.lp(MATCH, 0, 1f))
         setContentView(root)
+        window.setBackgroundDrawable(null)
     }
 }
 

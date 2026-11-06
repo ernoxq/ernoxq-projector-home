@@ -11,8 +11,17 @@ object Sounds {
     private var tick = 0
     private var select = 0
     private var lastTick = 0L
+    /** Navigation sounds can be switched off in Settings › Звук. */
+    @Volatile var enabled = true
+
+    fun isOn(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("ui_sounds", true)
+    fun setOn(ctx: Context, on: Boolean) {
+        enabled = on
+        ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putBoolean("ui_sounds", on).apply()
+    }
 
     fun init(ctx: Context) {
+        enabled = isOn(ctx)
         if (pool != null) return
         val p = SoundPool.Builder()
             .setMaxStreams(3)
@@ -29,6 +38,7 @@ object Sounds {
     }
 
     fun tick() {
+        if (!enabled) return
         val now = SystemClock.uptimeMillis()
         if (now - lastTick < 35) return // holding a direction key shouldn't turn into a buzz
         lastTick = now
@@ -36,6 +46,7 @@ object Sounds {
     }
 
     fun select() {
+        if (!enabled) return
         pool?.play(select, 0.6f, 0.6f, 1, 0, 1f)
     }
 }

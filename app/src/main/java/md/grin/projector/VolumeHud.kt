@@ -50,7 +50,7 @@ object VolumeHud {
     }
 
     /** Where the sound goes right now: a Bluetooth speaker's own name, an external output, or the projector. */
-    private fun outputName(ctx: Context): String {
+    fun outputName(ctx: Context): String {
         val am = ctx.getSystemService(AudioManager::class.java) ?: return "Проектор"
         val outs = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         fun nameOf(d: AudioDeviceInfo, fallback: String) =

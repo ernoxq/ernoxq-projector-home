@@ -119,6 +119,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             "/api/sleep" -> ok(out, json("ok" to SleepTimer.setOn(ctx, q("on") == "1")))
             "/api/sleeptest" -> ok(out, json("ok" to SleepTimer.test(ctx, 40)))
             "/api/aerial" -> ok(out, json("ok" to Aerials.show(ctx)))
+            "/api/npcard" -> ok(out, json("ok" to Aerials.setCard(ctx, q("on") == "1")))
             "/api/warmth" -> ok(out, json("ok" to Picture.setWarmth(ctx, q("v").toIntOrNull() ?: 50)))
             "/api/warm" -> ok(out, json("ok" to Picture.setWarm(ctx, q("on") == "1"), "on" to Picture.isWarm(ctx)))
             "/api/update" -> {
@@ -177,6 +178,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("sleep", SleepTimer.isOn(ctx))
             .put("fg", foreground())
             .put("warm", Picture.isWarm(ctx))
+            .put("npCard", Aerials.cardOn(ctx))
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

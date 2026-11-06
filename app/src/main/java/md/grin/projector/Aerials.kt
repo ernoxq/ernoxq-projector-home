@@ -59,6 +59,16 @@ object Aerials {
     fun isOn(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("aerials", true)
     fun setOn(ctx: Context, on: Boolean) { ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putBoolean("aerials", on).apply() }
 
+    /** The song card in the top corner of the screensaver, switched on and off from the phone. */
+    @Volatile private var card: Boolean? = null
+    fun cardOn(ctx: Context): Boolean = card ?: ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getBoolean("np_card", true).also { card = it }
+    fun setCard(ctx: Context, on: Boolean): Boolean {
+        card = on
+        ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit().putBoolean("np_card", on).apply()
+        view?.let { v -> ui.post { v.refreshCard() } }
+        return true
+    }
+
     /** Opens the screensaver full screen. */
     fun show(ctx: Context): Boolean = try {
         ctx.startActivity(Intent(ctx, AerialActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -204,7 +214,13 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val place: TextView
     private val clock: TextView
     private val nowPlaying: NowPlayingCard
-    private val mediaChanged: () -> Unit = { if (running) nowPlaying.update(Media.current(context)) }
+    private val mediaChanged: () -> Unit = { refreshCard() }
+
+    /** Shows the song card, unless it was switched off on the phone. */
+    fun refreshCard() {
+        if (!running) return
+        nowPlaying.update(if (Aerials.cardOn(context)) Media.current(context) else null)
+    }
     private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = Clock.zone }
 
     private var surface: Surface? = null
@@ -270,7 +286,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         labelsUntil = SystemClock.elapsedRealtime() + 60_000
         Media.attach(context.applicationContext)
         Media.listen(mediaChanged)
-        nowPlaying.update(Media.current(context))
+        refreshCard()
         fails = 0
         main.post(tick)
         if (surface != null) playNext()
@@ -418,7 +434,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             val t = timeFmt.format(Clock.now())
             // Setting the same text again would still re-measure the screen over the playing video.
             if (clock.text.toString() != t) clock.text = t
-            nowPlaying.update(Media.current(context))
+            refreshCard()
             syncLabels()
             val p = player
             val now = SystemClock.elapsedRealtime()

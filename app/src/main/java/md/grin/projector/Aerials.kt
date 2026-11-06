@@ -43,8 +43,8 @@ data class Clip(val place: String, val country: String, val tod: String, val url
 object Aerials {
     const val IDLE_MS = 3 * 60_000L
     // Kept modest: a nearly full flash drive makes the whole projector slow, not just the screensaver.
-    private const val CACHE_LIMIT = 1536L * 1024 * 1024
-    private const val MIN_FREE = 3L * 1024 * 1024 * 1024
+    private const val CACHE_LIMIT = 2560L * 1024 * 1024
+    private const val MIN_FREE = 1536L * 1024 * 1024
     private const val UA = "Mozilla/5.0 (Linux; Android 11) ProjectorHome"
     val headers = mapOf("User-Agent" to UA)
 
@@ -154,7 +154,7 @@ object Aerials {
         }, "aerial-download").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
-    /** Keeps at least 3 GB free and the collection under 1.5 GB, dropping what was played longest ago. */
+    /** Keeps at least 1.5 GB free and the collection under 2.5 GB, dropping what was played longest ago. */
     private fun makeRoom(ctx: Context): Boolean {
         val d = dir(ctx)
         while (true) {
@@ -402,21 +402,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         try {
             p.setSurface(s)
             p.setVolume(0f, 0f)
-            // The flight is picture only: marked as silent video so it never takes the sound from the music.
-            p.setAudioAttributes(android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_UNKNOWN)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE)
-                .build())
-            p.setOnPreparedListener {
-                if (it === player) {
-                    // Drop any sound track the clip has: nothing of ours plays audio over the music.
-                    try {
-                        it.trackInfo.forEachIndexed { i, t -> if (t.trackType == android.media.MediaPlayer.TrackInfo.MEDIA_TRACK_TYPE_AUDIO) it.deselectTrack(i) }
-                    } catch (_: Exception) {}
-                    ready = true
-                    it.start()
-                }
-            }
+            // Plain start, as before: the projector's video player stopped showing clips when their sound track was touched.
+            p.setOnPreparedListener { if (it === player) { ready = true; it.start() } }
             p.setOnInfoListener { mp, what, _ ->
                 if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START && mp === player) reveal(c)
                 false

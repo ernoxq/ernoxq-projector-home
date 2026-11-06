@@ -214,7 +214,23 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val place: TextView
     private val clock: TextView
     private val nowPlaying: NowPlayingCard
-    private val mediaChanged: () -> Unit = { refreshCard() }
+    private val mediaChanged: () -> Unit = { keepMusic(); refreshCard() }
+
+    private var musicWasOn = false
+    private var startedMusicWatchAt = 0L
+
+    /**
+     * Music must go on under the screensaver. Some players pause when another app comes to the front;
+     * if music that was playing stops in the first seconds and nobody pressed pause, start it again.
+     */
+    private fun keepMusic() {
+        if (!running || !musicWasOn) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - startedMusicWatchAt > 8_000) { musicWasOn = false; return }
+        if (now - Media.lastCommandAt < 10_000) return
+        val np = Media.current(context) ?: return
+        if (!np.playing) Media.resume()
+    }
 
     /** Shows the song card, unless it was switched off on the phone. */
     fun refreshCard() {
@@ -292,6 +308,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         labelsUntil = SystemClock.elapsedRealtime() + 60_000
         Media.attach(context.applicationContext)
         Media.listen(mediaChanged)
+        musicWasOn = Media.current(context)?.playing == true
+        startedMusicWatchAt = SystemClock.elapsedRealtime()
         refreshCard()
         fails = 0
         main.post(tick)
@@ -384,7 +402,21 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         try {
             p.setSurface(s)
             p.setVolume(0f, 0f)
-            p.setOnPreparedListener { if (it === player) { ready = true; it.start() } }
+            // The flight is picture only: marked as silent video so it never takes the sound from the music.
+            p.setAudioAttributes(android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_UNKNOWN)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE)
+                .build())
+            p.setOnPreparedListener {
+                if (it === player) {
+                    // Drop any sound track the clip has: nothing of ours plays audio over the music.
+                    try {
+                        it.trackInfo.forEachIndexed { i, t -> if (t.trackType == android.media.MediaPlayer.TrackInfo.MEDIA_TRACK_TYPE_AUDIO) it.deselectTrack(i) }
+                    } catch (_: Exception) {}
+                    ready = true
+                    it.start()
+                }
+            }
             p.setOnInfoListener { mp, what, _ ->
                 if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START && mp === player) reveal(c)
                 false
@@ -440,6 +472,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             val t = timeFmt.format(Clock.now())
             // Setting the same text again would still re-measure the screen over the playing video.
             if (clock.text.toString() != t) clock.text = t
+            keepMusic()
             refreshCard()
             syncLabels()
             val p = player

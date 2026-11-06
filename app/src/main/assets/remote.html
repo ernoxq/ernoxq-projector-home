@@ -61,6 +61,11 @@ svg{display:block}
 .ytpill{position:absolute;left:50%;bottom:18px;transform:translate(-50%,10px);opacity:0;pointer-events:none;height:40px;padding:0 16px 0 12px;border-radius:20px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);color:#C7C7CC;font-weight:500;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform .35s cubic-bezier(.2,1,.3,1),opacity .25s;z-index:2;white-space:nowrap}
 .ytpill.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
 .ytpill:active{background:rgba(255,255,255,.14)}
+.songpill{position:absolute;left:50%;top:18px;transform:translate(-50%,-10px);opacity:0;pointer-events:none;height:44px;padding:0 18px 0 14px;border-radius:22px;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);color:#F5F5F7;font-weight:600;font-size:15px;display:flex;align-items:center;gap:9px;transition:transform .35s cubic-bezier(.2,1,.3,1),opacity .25s,background .2s;z-index:2;white-space:nowrap}
+.songpill.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.songpill:active{background:rgba(255,255,255,.26)}
+.songpill .ic{width:26px;height:26px;border-radius:50%;background:#FF375F;display:flex;align-items:center;justify-content:center}
+.songpill.off .ic{background:rgba(255,255,255,.2)}
 .pad.yt .hint{opacity:0!important}
 /* ---------- control center (iOS style) ---------- */
 .cc{position:fixed;inset:0;z-index:10;background:rgba(14,14,16,.72);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);opacity:0;pointer-events:none;transition:opacity .28s ease;will-change:opacity;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
@@ -157,6 +162,7 @@ svg{display:block}
     <div class="ring" id="ring"></div>
     <div class="edge up"></div><div class="edge down"></div><div class="edge left"></div><div class="edge right"></div>
     <div class="toast" id="toast"></div>
+    <button class="songpill" id="songpill" onclick="toggleCard()" aria-label="Песня на заставке"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3" fill="#fff"/><circle cx="17" cy="16" r="3" fill="#fff"/></svg></span><span id="songlbl">Скрыть песню</span></button>
     <button class="ytpill" id="ytpill" onclick="openYtSearch()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg>Поиск в YouTube</button>
     <div class="hint" id="hint">Свайп — двигаться · касание — выбрать<br>Двумя пальцами вверх/вниз — громкость</div>
   </div>
@@ -343,7 +349,7 @@ function toggleWarm(){warmOn=!warmOn;paintWarm();api('/api/warm?on='+(warmOn?1:0
 function sleepTest(){if(confirm('Выключить проектор через 40 секунд? Любое нажатие на пульте отменит.')){api('/api/sleeptest');closeSheet()}}
 function toggleSleep(){sleepOn=!sleepOn;paintSleep();api('/api/sleep?on='+(sleepOn?1:0))}
 let cardOn=true;
-function paintCard(){$('tgnp').classList.toggle('on',cardOn);$('npst').textContent='На заставке · '+(cardOn?'вкл':'выкл')}
+function paintCard(){$('tgnp').classList.toggle('on',cardOn);$('npst').textContent='На заставке · '+(cardOn?'вкл':'выкл');$('songlbl').textContent=cardOn?'Скрыть песню':'Показать песню';$('songpill').classList.toggle('off',!cardOn)}
 function toggleCard(){cardOn=!cardOn;paintCard();api('/api/npcard?on='+(cardOn?1:0))}
 
 function ytSearch(){const i=$('tx');if(!i.value)return;api('/api/ytsearch?q='+encodeURIComponent(i.value));i.value='';closeSheet()}
@@ -354,6 +360,7 @@ $('tx').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();se
 const kbar=$('kbar'),kin=$('kin');
 let kbarOpen=false,dismissedAt=0,liveT=null,editing=false,kmode='field';
 $('ytpill').addEventListener('pointerdown',e=>e.stopPropagation());
+$('songpill').addEventListener('pointerdown',e=>e.stopPropagation());
 function openYtSearch(){kmode='yt';kin.value='';kin.placeholder='Поиск в YouTube';kbarOpen=true;kbar.classList.add('show');kin.focus()}
 function showKbar(text){if(kbarOpen)return;kbarOpen=true;if(!editing)kin.value=text||'';kbar.classList.add('show');try{kin.focus()}catch(e){}}
 function hideKbar(byUser){kbarOpen=false;editing=false;kbar.classList.remove('show');kin.blur();if(byUser)dismissedAt=Date.now();kmode='field';kin.placeholder='Нажми и печатай'}
@@ -383,6 +390,7 @@ function refresh(){
     $('warn').classList.toggle('show',!s.adb);
     if(s.typing&&s.typingAt>dismissedAt)showKbar(s.text);
     else if(!s.typing&&kbarOpen&&!editing&&kmode!=='yt')hideKbar(false);
+    $('songpill').classList.toggle('show',!!s.aerial&&!kbarOpen);
     const yt=!!(s.fg&&s.fg.indexOf('youtube')>=0)&&!kbarOpen;$('ytpill').classList.toggle('show',yt);pad.classList.toggle('yt',yt);
     const m=s.media;
     setText('tt',m?m.title:'Ничего не играет');

@@ -106,7 +106,11 @@ object Media {
         return NowPlaying(title, artist, source, art, playing, pos.coerceAtLeast(0), dur)
     }
 
+    /** When someone last pressed play/pause/next on a remote (to tell a user's pause from an unwanted one). */
+    @Volatile var lastCommandAt = 0L
+
     fun command(cmd: String): Boolean {
+        lastCommandAt = SystemClock.elapsedRealtime()
         val t = controller?.transportControls ?: return false
         when (cmd) {
             "play" -> if (controller?.playbackState?.state == PlaybackState.STATE_PLAYING) t.pause() else t.play()
@@ -114,6 +118,13 @@ object Media {
             "prev" -> t.skipToPrevious()
             else -> return false
         }
+        return true
+    }
+
+    /** Starts the player again without counting as someone's press. */
+    fun resume(): Boolean {
+        val t = controller?.transportControls ?: return false
+        t.play()
         return true
     }
 }

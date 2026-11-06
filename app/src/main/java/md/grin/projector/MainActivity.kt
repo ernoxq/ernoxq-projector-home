@@ -164,12 +164,12 @@ class MainActivity : Activity() {
         top.addView(chip, Ui.lp(WRAP, px(44)))
         root.addView(top, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = px(22) })
 
-        root.addView(sideNav(), FrameLayout.LayoutParams(WRAP, WRAP).apply { leftMargin = px(36); topMargin = px(222) })
+        root.addView(sideNav(), FrameLayout.LayoutParams(WRAP, WRAP).apply { leftMargin = px(30); topMargin = px(236) })
 
         // The main glass window.
         val win = Ui.col(this).apply {
             background = Glass.panel(40)
-            setPadding(px(32), px(30), px(32), px(30))
+            setPadding(px(34), px(32), px(34), px(32))
             clipChildren = false
             clipToPadding = false
         }
@@ -179,10 +179,11 @@ class MainActivity : Activity() {
         tilesBox = Ui.row(this, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
         mid.addView(tilesBox, Ui.lp(0, MATCH, 1f))
         mid.addView(player(), Ui.lp(0, MATCH, 1f).apply { leftMargin = px(14) })
-        win.addView(mid, Ui.lp(MATCH, px(210)))
+        win.addView(mid, Ui.lp(MATCH, px(236)))
         win.addView(Ui.flex(this))
-        win.addView(bottomRow(), Ui.lp(MATCH, px(96)))
-        root.addView(win, FrameLayout.LayoutParams(px(1040), px(506)).apply { leftMargin = px(142); topMargin = px(110) })
+        win.addView(bottomRow(), Ui.lp(MATCH, px(104)))
+        // Larger and wider: from just right of the shortcut column almost to the right edge.
+        root.addView(win, FrameLayout.LayoutParams(px(1124), px(560)).apply { leftMargin = px(122); topMargin = px(96) })
         return root
     }
 
@@ -271,7 +272,7 @@ class MainActivity : Activity() {
         art.addView(Ui.icon(this, R.drawable.ic_music, 64, 0xE6FFFFFF.toInt()), FrameLayout.LayoutParams(px(64), px(64), Gravity.CENTER))
         cover = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         art.addView(cover, FrameLayout.LayoutParams(MATCH, MATCH))
-        card.addView(art, Ui.lp(px(178), px(178)))
+        card.addView(art, Ui.lp(px(204), px(204)))
 
         val info = Ui.col(this).apply { clipChildren = false; clipToPadding = false }
         trackSource = Ui.text(this, "СЕЙЧАС ИГРАЕТ", 12, 600, Glass.TEXT3).apply { letterSpacing = 0.08f }

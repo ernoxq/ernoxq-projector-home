@@ -179,6 +179,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             .put("fg", foreground())
             .put("warm", Picture.isWarm(ctx))
             .put("npCard", Aerials.cardOn(ctx))
+            .put("aerial", Aerials.showing)
         if (np != null) {
             o.put("media", JSONObject()
                 .put("title", np.title)

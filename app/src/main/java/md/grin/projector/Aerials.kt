@@ -92,11 +92,25 @@ object Aerials {
     private fun dir(ctx: Context) = File(ctx.getExternalFilesDir(null) ?: ctx.filesDir, "aerials").apply { mkdirs() }
     fun file(ctx: Context, c: Clip) = File(dir(ctx), Integer.toHexString(c.url.hashCode()) + ".video")
 
-    /** The next flight: somewhere else than the last one, and from storage if possible. */
+    /**
+     * Music is playing (Spotify, AirPlay…). The projector's Wi‑Fi is weak and AirPlay sound has almost no
+     * buffer: a 2K flight streamed from the internet, plus the next one being saved, starved the music and
+     * made everything lag. So while music plays, the screensaver uses only flights already stored here.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun musicOn(ctx: Context) = Media.isPlaying()
+
+    /**
+     * The next flight: somewhere else than the last one, and from storage if possible.
+     * With [storedOnly] (music playing) it never streams: null when nothing is stored yet.
+     */
     @Synchronized
-    fun next(ctx: Context): Clip {
+    fun next(ctx: Context, storedOnly: Boolean = false): Clip? {
         val pool = pool(ctx)
-        val fresh = pool.filter { it.url !in recent && it.place != lastPlace }.ifEmpty { pool.filter { it.place != lastPlace }.ifEmpty { pool } }
+        val stored = pool.filter { file(ctx, it).exists() }
+        if (storedOnly && stored.isEmpty()) return null
+        val base = if (storedOnly) stored else pool
+        val fresh = base.filter { it.url !in recent && it.place != lastPlace }.ifEmpty { base.filter { it.place != lastPlace }.ifEmpty { base } }
         val c = fresh.filter { file(ctx, it).exists() }.randomOrNull() ?: fresh.random()
         recent.addLast(c.url)
         while (recent.size > pool.size / 2) recent.removeFirst()
@@ -145,9 +159,11 @@ object Aerials {
             try {
                 var fails = 0
                 while (showing && fails < 3) {
+                    // Never while music plays: saving a flight takes the whole Wi‑Fi and the music stops.
+                    if (musicOn(ctx)) { SystemClock.sleep(5_000); continue }
                     val todo = pool(ctx).filter { !file(ctx, it).exists() }.randomOrNull() ?: break
                     if (!makeRoom(ctx)) break
-                    try { download(todo, file(ctx, todo)); fails = 0 } catch (_: Exception) { fails++; SystemClock.sleep(5_000) }
+                    try { download(ctx, todo, file(ctx, todo)); fails = 0 } catch (_: Exception) { fails++; SystemClock.sleep(5_000) }
                 }
             } catch (_: Exception) {
             } finally { downloading = false }
@@ -165,7 +181,7 @@ object Aerials {
         }
     }
 
-    private fun download(c: Clip, to: File) {
+    private fun download(ctx: Context, c: Clip, to: File) {
         val part = File(to.path + ".part")
         var u = URL(c.url)
         var hops = 0
@@ -192,7 +208,7 @@ object Aerials {
             conn.inputStream.use { input ->
                 FileOutputStream(part, append).use { out ->
                     val buf = ByteArray(64 * 1024)
-                    while (showing) {
+                    while (showing && !musicOn(ctx)) {
                         val n = input.read(buf)
                         if (n < 0) { done = true; break }
                         out.write(buf, 0, n)
@@ -385,8 +401,15 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         startedAt = SystemClock.elapsedRealtime()
         // Nothing reachable (no internet): only the clock, and another try in a minute.
         if (fails >= 6) { fails = 0; main.postDelayed(nextClip, 60_000); return }
+        val music = Aerials.musicOn(context)
+        if (target != null && music && !Aerials.file(context, target).exists()) { playNext(); return }
         val c = if (target != null) { histPos = idx; target } else {
-            val n = try { Aerials.next(context) } catch (_: Exception) { return }
+            val n = try { Aerials.next(context, storedOnly = music) } catch (_: Exception) { return }
+            if (n == null) {
+                // Music and nothing stored yet: just the clock and the song, no video. Look again in a while.
+                main.postDelayed(nextClip, 30_000)
+                return
+            }
             history.add(n)
             if (history.size > 30) history.removeAt(0)
             histPos = history.size - 1
@@ -462,6 +485,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             keepMusic()
             refreshCard()
             syncLabels()
+            // Music started while this flight streams from the internet: move to a stored one (or none).
+            if (player != null && source == null && Aerials.musicOn(context)) { playNext(); main.postDelayed(this, 1000); return }
             val p = player
             val now = SystemClock.elapsedRealtime()
             try {

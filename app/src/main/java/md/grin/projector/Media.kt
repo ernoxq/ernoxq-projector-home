@@ -174,6 +174,9 @@ object Media {
         return NowPlaying(title, artist, source, art, playing, pos.coerceAtLeast(0), dur)
     }
 
+    /** Just "is something playing", cheap and safe to ask from any thread. */
+    fun isPlaying(): Boolean = try { controller?.playbackState?.state == PlaybackState.STATE_PLAYING } catch (_: Exception) { false }
+
     /** When someone last pressed play/pause/next on a remote (to tell a user's pause from an unwanted one). */
     @Volatile var lastCommandAt = 0L
 

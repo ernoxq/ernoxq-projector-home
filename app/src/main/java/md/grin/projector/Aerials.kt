@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.graphics.drawable.GradientDrawable
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -282,23 +281,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val clock: TextView
     private val nowPlaying: NowPlayingCard
     private val status: TextView
-    private val mediaChanged: () -> Unit = { keepMusic(); refreshCard() }
-
-    private var musicWasOn = false
-    private var startedMusicWatchAt = 0L
-
-    /**
-     * Music must go on under the screensaver. Some players pause when another app comes to the front;
-     * if music that was playing stops in the first seconds and nobody pressed pause, start it again.
-     */
-    private fun keepMusic() {
-        if (!running || !musicWasOn) return
-        val now = SystemClock.elapsedRealtime()
-        if (now - startedMusicWatchAt > 8_000) { musicWasOn = false; return }
-        if (now - Media.lastCommandAt < 10_000) return
-        val np = Media.current(context) ?: return
-        if (!np.playing) Media.resume()
-    }
+    private val mediaChanged: () -> Unit = { refreshCard() }
 
     /** Shows the song card, unless it was switched off on the phone. */
     fun refreshCard() {
@@ -308,7 +291,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     private val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = Clock.zone }
 
     private var surface: Surface? = null
-    private var player: MediaPlayer? = null
+    private var player: FlightPlayer? = null
     private var clip: Clip? = null
     private var source: File? = null
     private var running = false
@@ -385,8 +368,6 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         labelsUntil = SystemClock.elapsedRealtime() + 60_000
         Media.attach(context.applicationContext)
         Media.listen(mediaChanged)
-        musicWasOn = Media.current(context)?.playing == true
-        startedMusicWatchAt = SystemClock.elapsedRealtime()
         refreshCard()
         fails = 0
         main.post(tick)
@@ -409,7 +390,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         val p = player ?: return
         player = null
         ready = false
-        try { p.setSurface(null); p.release() } catch (_: Exception) {}
+        try { p.release() } catch (_: Exception) {}
     }
 
     private val nextClip = Runnable { playNext() }
@@ -481,25 +462,17 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         source = f
         Aerials.playingFile = f
         f?.setLastModified(System.currentTimeMillis())
-        val p = MediaPlayer()
+        // Picture only, through our own decoder: the system player took the sound over and paused the music.
+        var me: FlightPlayer? = null
+        val p = FlightPlayer(s, object : FlightPlayer.Listener {
+            override fun onSize(w: Int, h: Int) { if (player === me) crop(w, h) }
+            override fun onFirstFrame() { if (player === me) { ready = true; reveal(c) } }
+            override fun onEnd() { if (player === me) playNext() }
+            override fun onError() { if (player === me) failed() }
+        })
+        me = p
         player = p
-        try {
-            p.setSurface(s)
-            p.setVolume(0f, 0f)
-            // Plain start, as before: the projector's video player stopped showing clips when their sound track was touched.
-            p.setOnPreparedListener { if (it === player) { ready = true; it.start() } }
-            p.setOnInfoListener { mp, what, _ ->
-                if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START && mp === player) reveal(c)
-                false
-            }
-            p.setOnVideoSizeChangedListener { mp, w, h -> if (mp === player) crop(w, h) }
-            p.setOnCompletionListener { if (it === player) playNext() }
-            p.setOnErrorListener { mp, _, _ -> if (mp === player) failed(); true }
-            if (f != null) p.setDataSource(f.path) else p.setDataSource(context, Uri.parse(Aerials.source(c)), Aerials.headers)
-            p.prepareAsync()
-        } catch (_: Exception) {
-            failed()
-        }
+        p.start(f?.path, if (f == null) Aerials.source(c) else null, Aerials.headers)
     }
 
     /** A clip that won't play is skipped; if it was a saved file, it's thrown away and fetched again later. */
@@ -557,7 +530,6 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
             // Setting the same text again would still re-measure the screen over the playing video.
             if (clock.text.toString() != t) clock.text = t
             showStatus()
-            keepMusic()
             refreshCard()
             syncLabels()
             // Music started while this flight streams from the internet: move to a stored one (or none).
@@ -568,9 +540,10 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
                 if (p != null && !ready) {
                     if (now - startedAt > 30_000) failed()
                 } else if (p != null) {
-                    val pos = p.currentPosition
-                    val left = p.duration - pos
-                    if (!fading && p.duration > 4000 && left in 1..1600) {
+                    val pos = p.positionMs.toInt()
+                    val dur = p.durationMs.toInt()
+                    val left = dur - pos
+                    if (!fading && dur > 4000 && left in 1..1600) {
                         fading = true
                         video.animate().alpha(0f).setDuration(1200).start()
                     }

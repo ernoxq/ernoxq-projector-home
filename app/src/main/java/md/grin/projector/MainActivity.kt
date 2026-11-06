@@ -177,8 +177,8 @@ class MainActivity : Activity() {
         win.addView(Ui.flex(this))
         val mid = Ui.row(this, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
         tilesBox = Ui.row(this, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
-        mid.addView(tilesBox, Ui.lp(0, MATCH, 1f))
-        mid.addView(player(), Ui.lp(0, MATCH, 1f).apply { leftMargin = px(14) })
+        mid.addView(tilesBox, Ui.lp(0, MATCH, 2f))
+        mid.addView(player(), Ui.lp(0, MATCH, 3f).apply { leftMargin = px(14) })
         win.addView(mid, Ui.lp(MATCH, px(236)))
         win.addView(Ui.flex(this))
         win.addView(bottomRow(), Ui.lp(MATCH, px(104)))
@@ -338,7 +338,8 @@ class MainActivity : Activity() {
             setOnClickListener { onClick() }
         }
 
-    private val tileColors = mapOf("youtube" to 0xFFFF3B30.toInt(), "netflix" to 0xFFC4161C.toInt(), "spotify" to 0xFF1FB257.toInt())
+    // Netflix is left out on purpose: only YouTube and Spotify on the home screen, the player gets the room.
+    private val tileColors = mapOf("youtube" to 0xFFFF3B30.toInt(), "spotify" to 0xFF1FB257.toInt())
 
     private fun renderTiles() {
         tilesBox.removeAllViews()

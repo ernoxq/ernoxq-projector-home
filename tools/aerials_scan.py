@@ -1,13 +1,16 @@
 """Finds Apple's lighter HEVC version of each screensaver flight and checks that it is reachable.
 Run on GitHub (the projector's list is assets/aerials.json); writes aerials-scan.json."""
-import io, json, tarfile, urllib.request
+import io, json, ssl, tarfile, urllib.request
+
+# Apple signs sylvan.apple.com with its own CA; the projector itself uses plain http for these files.
+CTX = ssl._create_unverified_context()
 
 UA = {"User-Agent": "Mozilla/5.0"}
 def get(url):
-    return urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60).read()
+    return urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120, context=CTX).read()
 def head(url):
     try:
-        r = urllib.request.urlopen(urllib.request.Request(url, headers=UA, method="HEAD"), timeout=30)
+        r = urllib.request.urlopen(urllib.request.Request(url, headers=UA, method="HEAD"), timeout=30, context=CTX)
         return r.status, int(r.headers.get("Content-Length") or 0)
     except Exception as e:
         return str(e), 0
@@ -52,3 +55,5 @@ for c in ours:
 json.dump(out, open("aerials-scan.json", "w"), ensure_ascii=False, indent=1)
 ok = [r for r in out if r.get("status") == 200]
 print("with HEVC:", len(ok), "of", len(out), "| h264 GB", sum(r.get("h264_size", 0) for r in ok) / 1e9, "-> hevc GB", sum(r["size"] for r in ok) / 1e9)
+
+print("SCAN-JSON " + json.dumps([{k: r.get(k) for k in ("url", "hevc", "status", "size", "h264_size")} for r in out], ensure_ascii=False))

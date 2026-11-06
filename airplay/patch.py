@@ -74,6 +74,13 @@ edit(act, """        setContent {
         }""")
 shutil.copy(here / "GrinShell.kt", src / "ui/GrinShell.kt")
 
+# The window closes when it goes to the background with nobody connected: the receiver keeps running as a
+# service, without holding its whole screen in the projector's 1 GB of memory.
+edit(act, """    override fun onStop() {
+        super.onStop()""", """    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !isInPip.value && viewModel.connectionCount.value == 0) finish()""")
+
 # --- window theme: black from the first frame, never a white flash ----------------------------
 dark = """<?xml version="1.0" encoding="utf-8"?>
 <resources>

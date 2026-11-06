@@ -191,11 +191,4 @@ object Media {
         }
         return true
     }
-
-    /** Starts the player again without counting as someone's press. */
-    fun resume(): Boolean {
-        val t = controller?.transportControls ?: return false
-        t.play()
-        return true
-    }
 }

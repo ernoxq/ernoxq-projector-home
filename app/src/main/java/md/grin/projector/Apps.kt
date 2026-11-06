@@ -123,33 +123,6 @@ object Apps {
         null
     } ?: icon(ctx, entry)
 
-    private val tints = HashMap<String, Int>()
-
-    /** The icon's most colourful shade, used to tint its tile. */
-    fun mainColor(ctx: Context, entry: AppEntry, icon: Drawable?): Int? {
-        tints[entry.pkg]?.let { return it }
-        val d = icon ?: return null
-        return try {
-            val bmp = android.graphics.Bitmap.createBitmap(24, 24, android.graphics.Bitmap.Config.ARGB_8888)
-            val c = android.graphics.Canvas(bmp)
-            d.setBounds(0, 0, 24, 24)
-            d.draw(c)
-            var best = 0f; var color: Int? = null
-            val hsv = FloatArray(3)
-            for (x in 0 until 24) for (y in 0 until 24) {
-                val p = bmp.getPixel(x, y)
-                if (android.graphics.Color.alpha(p) < 200) continue
-                android.graphics.Color.colorToHSV(p, hsv)
-                val score = hsv[1] * hsv[2]
-                if (score > best) { best = score; color = p }
-            }
-            bmp.recycle()
-            (if (best > 0.25f) color else null)?.also { tints[entry.pkg] = it }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
     /** Opens YouTube's search results for [query] (works with the TV version's own keyboard screen too). */
     fun searchYoutube(ctx: Context, query: String): Boolean {
         val spec = tiles.firstOrNull { it.key == "youtube" } ?: return false

@@ -34,7 +34,6 @@ object VolumeHud {
     // Apple-like motion: a long, soft spring on the way in, an unhurried ease on the way out.
     private val springIn = PathInterpolator(0.16f, 1.12f, 0.3f, 1f)
     private val easeOut = PathInterpolator(0.55f, 0f, 0.75f, 0.2f)
-    private val easeBump = PathInterpolator(0.3f, 0f, 0.2f, 1f)
 
     fun available(ctx: Context): Boolean = Settings.canDrawOverlays(ctx)
 
@@ -106,14 +105,6 @@ object VolumeHud {
             v.animate().translationY(-Ui.pxf(150)).alpha(0f).scaleX(0.92f).scaleY(0.92f)
                 .setDuration(520).setInterpolator(easeOut).withLayer().start()
         }
-    }
-
-    /** A tiny breath when the level changes while it's already on screen. */
-    private fun bump(v: View) {
-        v.animate().cancel()
-        v.animate().translationY(0f).alpha(1f).scaleX(1.03f).scaleY(1.03f).setDuration(120).setInterpolator(easeBump)
-            .withEndAction { v.animate().scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(easeBump).start() }
-            .start()
     }
 
     private class HudView(private val ctx: Context) : View(ctx) {

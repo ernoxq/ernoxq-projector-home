@@ -35,7 +35,7 @@ class RemoteService : Service() {
         // Our own AirPlay receiver: put in place (or updated) soon after start, not only with the 6-hour check.
         updates.postDelayed({ Thread { Updater.checkReceiver(applicationContext) }.start() }, 45_000)
         // Right after a start or an update: our home screen stays the default, the firmware's update nag stays off.
-        updates.postDelayed({ Thread { Adb.quietSystem(applicationContext) }.start() }, 3_000)
+        updates.postDelayed({ Thread { Adb.quietSystem(applicationContext); Adb.closeOtherHomes(applicationContext) }.start() }, 3_000)
         updates.postDelayed(airplayWatch, 30_000)
         updates.postDelayed(aerialWatch, 30_000)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
@@ -48,7 +48,14 @@ class RemoteService : Service() {
         override fun run() {
             val quiet = (App.isForeground || Aerials.showing) && SleepTimer.idleMs() > 5 * 60_000L && Media.current(applicationContext)?.playing != true
             if (quiet) {
-                Thread { Updater.check(applicationContext) }.start()
+                Thread {
+                    val ctx = applicationContext
+                    Updater.check(ctx)
+                    // Ahead-of-time compiling: after each new version and every 3 days, only in quiet moments.
+                    val p = ctx.getSharedPreferences("home", MODE_PRIVATE)
+                    if (p.getLong("optimized_build", -1) != Updater.currentBuild(ctx) ||
+                        System.currentTimeMillis() - p.getLong("optimized_at", 0) > 3 * 24 * 3600_000L) Adb.optimizeApps(ctx)
+                }.start()
                 updates.postDelayed(this, 6 * 60 * 60_000L)
             } else {
                 updates.postDelayed(this, 10 * 60_000L) // busy: try again in 10 minutes

@@ -150,6 +150,56 @@ object Adb {
         prefs.edit().putStringSet("quieted", done).apply()
     }
 
+    /**
+     * Quiet system tweaks that change nothing on screen: the firmware keeps scanning for Wi‑Fi networks and
+     * Bluetooth devices "just in case", which costs CPU and takes the radio away from streaming music.
+     */
+    fun tune(ctx: Context) {
+        shell(ctx, "settings put global wifi_scan_always_enabled 0")
+        shell(ctx, "settings put global ble_scan_always_enabled 0")
+        shell(ctx, "settings put global network_recommendations_enabled 0")
+        shell(ctx, "settings put global wifi_networks_available_notification_on 0")
+    }
+
+    /** The stock home screen stays in memory for nothing while ours is the home: close it at start. */
+    fun closeOtherHomes(ctx: Context) {
+        val home = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
+        val others = ctx.packageManager.queryIntentActivities(home, 0).map { it.activityInfo.packageName }
+            .filter { it != ctx.packageName && !it.contains("settings", true) }
+            .distinct()
+        for (p in others) shell(ctx, "am force-stop $p")
+    }
+
+    /**
+     * Apps start faster when compiled ahead of time. Android normally does this overnight while "idle",
+     * which a projector almost never is. Our own app and AirPlay are compiled fully; the rest by their
+     * usage profiles. Runs only when the projector is quiet; takes a few minutes in the background.
+     */
+    fun optimizeApps(ctx: Context) {
+        shell(ctx, "cmd package compile -m speed -f ${ctx.packageName}")
+        val air = Apps.detectAirplay(ctx)
+        if (Apps.installedVersion(ctx, air) >= 0) shell(ctx, "cmd package compile -m speed -f $air")
+        shell(ctx, "cmd package bg-dexopt-job")
+        ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit()
+            .putLong("optimized_at", System.currentTimeMillis())
+            .putLong("optimized_build", Updater.currentBuild(ctx)).apply()
+    }
+
+    /** What takes the projector's memory and processor, for finding heavy firmware apps. */
+    fun diagnostics(ctx: Context): String = buildString {
+        fun section(title: String, cmd: String) {
+            append("== ").append(title).append(" ==\n")
+            append(run(ctx, cmd)?.trim() ?: "(нет доступа)").append("\n\n")
+        }
+        append("Projector Home 1.0.").append(Updater.currentBuild(ctx)).append("\n\n")
+        section("Память", "grep -E 'MemTotal|MemAvailable|SwapTotal|SwapFree' /proc/meminfo")
+        section("Место", "df -h /data | tail -1")
+        section("Время работы и нагрузка", "uptime")
+        section("Больше всего памяти (PSS)", "dumpsys meminfo | sed -n '/Total PSS by process/,/Total PSS by OOM/p' | head -30")
+        section("Процессор сейчас", "top -b -n 1 -m 15 | tail -17")
+        section("Включённые приложения прошивки", "pm list packages -s -e | sed 's/package://' | sort")
+    }
+
     /** Makes our Apple TV-style keyboard the one Android uses. */
     fun useOurKeyboard(ctx: Context): Boolean {
         val id = "${ctx.packageName}/.TvKeyboard"
@@ -221,6 +271,7 @@ object Adb {
         // Lets Settings › Wi‑Fi show the network's name.
         shell(ctx, "pm grant $pkg android.permission.ACCESS_FINE_LOCATION")
         quietSystem(ctx)
+        tune(ctx)
         shell(ctx, "settings put global window_animation_scale 0.5")
         shell(ctx, "settings put global transition_animation_scale 0.5")
         shell(ctx, "settings put global animator_duration_scale 0.5")

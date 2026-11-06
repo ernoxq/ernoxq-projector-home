@@ -44,7 +44,7 @@ data class Clip(val place: String, val country: String, val tod: String, val url
 object Aerials {
     const val IDLE_MS = 3 * 60_000L
     // Kept modest: a nearly full flash drive makes the whole projector slow, not just the screensaver.
-    private const val CACHE_LIMIT = 2560L * 1024 * 1024
+    private const val CACHE_LIMIT = 3300L * 1024 * 1024
     private const val MIN_FREE = 1536L * 1024 * 1024
     private const val UA = "Mozilla/5.0 (Linux; Android 11) ProjectorHome"
     val headers = mapOf("User-Agent" to UA)
@@ -150,7 +150,18 @@ object Aerials {
 
     /** Frees space taken by older, bigger collections. Runs once in the background at start. */
     fun trim(ctx: Context) {
-        Thread({ try { makeRoom(ctx.applicationContext) } catch (_: Exception) {} }, "aerial-trim").apply { priority = Thread.MIN_PRIORITY }.start()
+        val app = ctx.applicationContext
+        Thread({
+            try {
+                // Flights that are no longer in the library (the list is now 20 light ones) are deleted.
+                val keep = all(app).flatMap { listOf(fileFor(app, it.url).name, it.hevc?.let { h -> fileFor(app, h).name }) }.filterNotNull().toSet()
+                dir(app).listFiles()?.forEach { f ->
+                    val name = f.name.removeSuffix(".part")
+                    if (name !in keep && f != playingFile) f.delete()
+                }
+                makeRoom(app)
+            } catch (_: Exception) {}
+        }, "aerial-trim").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
     fun leave() { active.decrementAndGet() }
@@ -196,7 +207,7 @@ object Aerials {
         }, "aerial-download").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
-    /** Keeps at least 1.5 GB free and the collection under 2.5 GB, dropping what was played longest ago. */
+    /** Keeps at least 1.5 GB free and the collection under 3.3 GB (the whole library of 20), dropping what was played longest ago. */
     private fun makeRoom(ctx: Context): Boolean {
         val d = dir(ctx)
         while (true) {

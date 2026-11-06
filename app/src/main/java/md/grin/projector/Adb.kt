@@ -174,6 +174,11 @@ object Adb {
         shell(ctx, "settings put global ble_scan_always_enabled 0")
         shell(ctx, "settings put global network_recommendations_enabled 0")
         shell(ctx, "settings put global wifi_networks_available_notification_on 0")
+        // Google Play worked in the background (even froze, ANR) and took up to ~80 MB while music played.
+        // It still opens and installs normally when you open it; it just doesn't run on its own.
+        shell(ctx, "cmd appops set com.android.vending RUN_ANY_IN_BACKGROUND ignore")
+        shell(ctx, "am set-standby-bucket com.android.vending restricted")
+        shell(ctx, "am force-stop com.android.vending")
     }
 
     /**

@@ -52,6 +52,8 @@ object Updater {
         try {
             status = "Проверяю обновления…"
             val (build, url) = latest() ?: run { status = "Нет связи с GitHub"; return false }
+            // Never install during music: it's the heaviest thing a 1 GB projector can do.
+            if (Media.isPlaying()) { status = "Обновление подождёт, пока играет музыка"; return false }
             if (build <= currentBuild(ctx)) {
                 status = "Стоит последняя версия (1.0.${currentBuild(ctx)})"
                 busy = false
@@ -81,7 +83,7 @@ object Updater {
      * and the new one is named "AirPlay" and started. Skipped while someone is using AirPlay.
      */
     fun checkReceiver(ctx: Context): Boolean {
-        if (receiverBusy) return false
+        if (receiverBusy || Media.isPlaying()) return false
         receiverBusy = true
         try {
             val have = Apps.installedVersion(ctx, Apps.AIRPLAY_OWN)

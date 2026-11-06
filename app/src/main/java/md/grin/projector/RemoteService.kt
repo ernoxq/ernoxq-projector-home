@@ -32,8 +32,9 @@ class RemoteService : Service() {
         SleepTimer.start(applicationContext)
         Apps.detectAirplay(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
-        // Our own AirPlay receiver: put in place (or updated) soon after start, not only with the 6-hour check.
-        updates.postDelayed({ Thread { Updater.checkReceiver(applicationContext) }.start() }, 45_000)
+        // Our own AirPlay receiver: put in place (or updated) soon after start, but never while music plays:
+        // installing an app is heavy on a 1 GB projector and made Spotify stutter and stop.
+        updates.postDelayed(receiverCheck, 45_000)
         // Right after a start or an update: our home screen stays the default, the firmware's update nag stays off.
         updates.postDelayed({ Thread { Adb.quietSystem(applicationContext); Adb.closeOtherHomes(applicationContext) }.start() }, 3_000)
         updates.postDelayed(airplayWatch, 30_000)
@@ -114,6 +115,13 @@ class RemoteService : Service() {
         override fun run() {
             Thread { try { Adb.startAirplay(applicationContext) } catch (_: Exception) {} }.start()
             updates.postDelayed(this, 3 * 60_000L)
+        }
+    }
+
+    private val receiverCheck = object : Runnable {
+        override fun run() {
+            if (Media.isPlaying()) { updates.postDelayed(this, 10 * 60_000L); return }
+            Thread { Updater.checkReceiver(applicationContext) }.start()
         }
     }
 

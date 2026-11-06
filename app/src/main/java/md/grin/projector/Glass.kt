@@ -92,6 +92,10 @@ object Glass {
  * all out of focus. Painted once into a half-size bitmap (it's blurry anyway), then just copied to the screen.
  */
 class RoomDrawable : Drawable() {
+    private companion object {
+        /** One painted room for every screen of the app (it used to be one copy per screen). */
+        @Volatile var shared: Bitmap? = null
+    }
     private var cache: Bitmap? = null
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val dst = Rect()
@@ -101,7 +105,9 @@ class RoomDrawable : Drawable() {
     override fun draw(canvas: Canvas) {
         val b = bounds
         if (b.isEmpty) return
-        val bmp = cache ?: render(maxOf(1, b.width() / 2), maxOf(1, b.height() / 2)).also { cache = it }
+        val w = maxOf(1, b.width() / 2)
+        val h = maxOf(1, b.height() / 2)
+        val bmp = cache ?: (shared?.takeIf { it.width == w && it.height == h } ?: render(w, h).also { shared = it }).also { cache = it }
         dst.set(b)
         canvas.drawBitmap(bmp, null, dst, paint)
     }

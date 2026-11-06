@@ -270,6 +270,9 @@ class MusicScreen(ctx: Context) : FrameLayout(ctx) {
             bar.fraction = pos.toFloat() / dur
             set(elapsed, mmss(pos))
             set(left, "−" + mmss(dur - pos))
+        } else if (np != null && np.position > 0) {
+            // Length not known yet: at least show how far into the song we are.
+            bar.fraction = 0f; set(elapsed, mmss(np.position)); set(left, "")
         } else {
             bar.fraction = 0f; set(elapsed, ""); set(left, "")
         }

@@ -45,6 +45,16 @@ edit(svc, "if (running) videoRenderer.startSession() else {",
 edit(svc, "        _videoPlaybackActive.value = true\n        airPlayVideoPlayer.play(location, startPositionSeconds)",
      "        _videoPlaybackActive.value = true\n        launchMainActivity()\n        airPlayVideoPlayer.play(location, startPositionSeconds)")
 
+# --- music: tell the projector how long the song is (length arrives after the title) -------
+edit(svc, """        if (durMs <= 0) return
+        _positionMs.value = posMs
+        _durationMs.value = durMs""",
+     """        if (durMs <= 0) return
+        val lengthChanged = kotlin.math.abs(_durationMs.value - durMs) > 1000
+        _positionMs.value = posMs
+        _durationMs.value = durMs
+        if (lengthChanged) _updateMediaMetadata()""")
+
 # --- activity: always dark, wrapped in the Apple TV-style shell ------------------------------
 act = src / "MainActivity.kt"
 edit(act, """        setContent {

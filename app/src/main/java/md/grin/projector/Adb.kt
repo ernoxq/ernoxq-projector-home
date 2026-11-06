@@ -357,7 +357,9 @@ object Adb {
         if (Apps.installedVersion(ctx, air) < 0) return
         if (!shell(ctx, "appops set $air SYSTEM_ALERT_WINDOW allow")) return
         shell(ctx, "dumpsys deviceidle whitelist +$air")
-        for ((k, v) in listOf("auto_start" to "true", "boot_auto_start" to "true", "run_in_background" to "true", "auto_fullscreen" to "true")) {
+        for ((k, v) in listOf("auto_start" to "true", "boot_auto_start" to "true", "run_in_background" to "true", "auto_fullscreen" to "true",
+                // Music: the steadiest buffer (99th percentile) and auto-sizing, so songs don't skip back.
+                "audio_auto_buffer" to "true", "audio_adaptive_step" to "4")) {
             shell(ctx, airSet(air, k, v))
         }
         // AirPlay matters more than apps in the background: never put to sleep, allowed to run in background.

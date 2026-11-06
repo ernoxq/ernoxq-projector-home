@@ -25,7 +25,7 @@ object Apps {
     const val AIRPLAY_OWN = "md.grin.airplay"
     const val AIRPLAY_STOCK = "io.github.jqssun.airplay"
     /** The receiver version this build of Projector Home brings along (airplay/VERSION). */
-    const val AIRPLAY_BUILD = 1003L
+    const val AIRPLAY_BUILD = 1004L
     /** Which receiver is on the projector right now. */
     @Volatile var AIRPLAY = AIRPLAY_STOCK
         private set

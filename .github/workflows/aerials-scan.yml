@@ -1,0 +1,15 @@
+name: Scan screensaver flights
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/aerials_scan.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aerials-scan
+          path: aerials-scan.json

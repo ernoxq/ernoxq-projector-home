@@ -188,7 +188,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 .put("playing", np.playing)
                 .put("position", np.position)
                 .put("duration", np.duration)
-                .put("art", np.art != null))
+                .put("art", np.art != null)
+                .put("artId", np.art?.let { System.identityHashCode(it) } ?: 0))
         }
         return o.toString()
     }

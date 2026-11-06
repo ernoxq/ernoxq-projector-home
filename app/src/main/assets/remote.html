@@ -396,7 +396,7 @@ function refresh(){
     setText('tt',m?m.title:'Ничего не играет');
     setText('ta',m?((m.artist?m.artist+' · ':'')+'на HY300 Pro'):'На HY300 Pro');
     setHTML('pp',m&&m.playing?'<path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/>':'<path d="M7 4v16l13-8z"/>');
-    const k=m&&m.art?m.title:'';
+    const k=m&&m.art?(m.title+'|'+(m.artId||'')):'';
     if(k!==lastArt){lastArt=k;$('art').style.backgroundImage=k?'url(/api/art?'+Date.now()+')':'none'}
   });
 }

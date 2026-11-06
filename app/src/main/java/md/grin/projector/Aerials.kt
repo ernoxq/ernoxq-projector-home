@@ -40,8 +40,10 @@ data class Clip(val place: String, val country: String, val tod: String, val url
 object Aerials {
     const val IDLE_MS = 3 * 60_000L
     // Kept modest: a nearly full flash drive makes the whole projector slow, not just the screensaver.
-    private const val CACHE_LIMIT = 3300L * 1024 * 1024
-    private const val MIN_FREE = 1536L * 1024 * 1024
+    // The projector has only 4.7 GB of storage with ~1.6 GB free: the 12 lightest flights (1.3 GB) are kept,
+    // leaving about half a gigabyte free for Android.
+    private const val CACHE_LIMIT = 1400L * 1024 * 1024
+    private const val MIN_FREE = 450L * 1024 * 1024
     private const val UA = "Mozilla/5.0 (Linux; Android 11) ProjectorHome"
     val headers = mapOf("User-Agent" to UA)
 
@@ -202,10 +204,10 @@ object Aerials {
                     val storedCount = all(ctx).size - missing.size
                     stored = storedCount
                     total = all(ctx).size
-                    // Little stored yet: the lightest flights first, so a picture shows up soon.
                     // With music on, only the first few are saved (slowly); the rest waits for silence.
                     if (musicOn(ctx) && storedCount >= 3) { SystemClock.sleep(5_000); continue }
-                    val todo = (if (storedCount < 4) missing.minByOrNull { it.mb } else missing.randomOrNull()) ?: break
+                    // Lightest first: a picture shows up soon, and as many flights as possible fit the small drive.
+                    val todo = missing.minByOrNull { it.mb } ?: break
                     if (!makeRoom(ctx)) break
                     try { download(ctx, todo, file(ctx, todo)); fails = 0 } catch (_: Exception) { fails++; SystemClock.sleep(5_000) }
                 }
@@ -214,7 +216,7 @@ object Aerials {
         }, "aerial-download").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
-    /** Keeps at least 1.5 GB free and the collection under 3.3 GB (the whole library of 20), dropping what was played longest ago. */
+    /** Keeps at least 450 MB free and the collection under 1.4 GB (the library of 12), dropping what was played longest ago. */
     private fun makeRoom(ctx: Context): Boolean {
         val d = dir(ctx)
         while (true) {

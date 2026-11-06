@@ -97,6 +97,9 @@ object Media {
     }
     private val loading = HashSet<String>()
 
+    /** Low memory: forget kept covers (the playing one comes back with the next update). */
+    fun trim() { synchronized(covers) { covers.clear() } }
+
     /**
      * The cover of the current song. Players hand it over in different ways: a picture, a link to one,
      * or the picture a moment later. Whatever we get is kept for that song, so it doesn't blink away

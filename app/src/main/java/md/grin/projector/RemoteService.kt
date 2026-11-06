@@ -106,6 +106,7 @@ class RemoteService : Service() {
             val ctx = applicationContext
             if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS &&
                 !Aerials.musicOn(ctx)) Aerials.show(ctx)
+            Thread { Adb.closeIdleKeys() }.start()
             updates.postDelayed(this, 15_000)
         }
     }
@@ -146,6 +147,12 @@ class RemoteService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /** Android is short of memory: let go of covers kept for songs that aren't playing. */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_RUNNING_LOW) Media.trim()
+    }
 
     companion object {
         fun start(ctx: Context) {

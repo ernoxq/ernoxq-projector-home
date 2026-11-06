@@ -81,6 +81,19 @@ object Adb {
         writeLive(ctx, "t " + java.net.URLEncoder.encode(text, "UTF-8"))
 
     private val liveLock = Any()
+    @Volatile private var liveUsedAt = 0L
+
+    /**
+     * The key injector holds ~40 MB of memory on a 1 GB projector: after 5 minutes without presses it's closed
+     * (it ends by itself when its input closes); the next press starts it again in about a second.
+     */
+    fun closeIdleKeys() {
+        if (live == null || android.os.SystemClock.elapsedRealtime() - liveUsedAt < 5 * 60_000L) return
+        synchronized(liveLock) {
+            try { live?.close() } catch (_: Throwable) {}
+            live = null
+        }
+    }
 
     private fun writeLive(ctx: Context, line: String): Boolean {
         synchronized(liveLock) {
@@ -93,6 +106,7 @@ object Adb {
                 it.write("CLASSPATH=$apk app_process / ${KeyServer::class.java.name} || while read k; do input keyevent \$k; done\n")
             } ?: return false
             s.write("$line\n")
+            liveUsedAt = android.os.SystemClock.elapsedRealtime()
             return true
         } catch (e: Throwable) {
             try { live?.close() } catch (_: Throwable) {}
@@ -129,6 +143,7 @@ object Adb {
         val build = Updater.currentBuild(ctx)
         if (prefs0.getLong("quiet_scan", -1) == build) return
         prefs0.edit().putLong("quiet_scan", build).apply()
+        debloat(ctx)
         val pm = ctx.packageManager
         val nags = ArrayList<String>()
         for (ai in pm.getInstalledApplications(0)) {
@@ -159,6 +174,32 @@ object Adb {
         shell(ctx, "settings put global ble_scan_always_enabled 0")
         shell(ctx, "settings put global network_recommendations_enabled 0")
         shell(ctx, "settings put global wifi_networks_available_notification_on 0")
+    }
+
+    /**
+     * Firmware extras that run in the background for nothing on this projector, found with /api/diag
+     * (1 GB of memory, the kernel was busy swapping): the HTC app store, usage-statistics uploader, OTA updaters
+     * (the "Version update" nag), factory test tools, a demo office suite, the stock screensaver and music player,
+     * printing. Switched off, not removed: `pm enable <name>` brings any of them back.
+     */
+    private val DEBLOAT = listOf(
+        "com.htc.storeos", "com.htc.eventuploadservice", "com.htc.htcotaupdate", "android.rockchip.update.service",
+        "com.htc.hyk_test", "com.softwinner.agingdragonbox", "com.softwinner.dragonbox", "com.softwinner.dragonatt",
+        "com.mobisystems.office", "com.htc.screensaver", "com.android.music", "com.android.printspooler",
+        "com.android.bips", "com.android.printservice.recommendation", "com.android.egg", "com.android.dreams.web",
+        "com.android.wallpapercropper",
+    )
+
+    fun debloat(ctx: Context) {
+        val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+        val done = prefs.getStringSet("quieted", emptySet())!!.toMutableSet()
+        val installed = ctx.packageManager.getInstalledApplications(0).filter { it.enabled }.map { it.packageName }
+        for (p in installed) {
+            if (p !in DEBLOAT && !p.startsWith("com.softwinner.update")) continue
+            shell(ctx, "am force-stop $p")
+            if (shell(ctx, "pm disable-user --user 0 $p")) done += p
+        }
+        prefs.edit().putStringSet("quieted", done).apply()
     }
 
     /** The stock home screen stays in memory for nothing while ours is the home: close it at start. */

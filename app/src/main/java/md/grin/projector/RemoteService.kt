@@ -31,6 +31,8 @@ class RemoteService : Service() {
         Aerials.trim(applicationContext)
         SleepTimer.start(applicationContext)
         updates.postDelayed({ Thread { Adb.airplayReady(applicationContext) }.start() }, 25_000)
+        // Right after a start or an update: our home screen stays the default, the firmware's update nag stays off.
+        updates.postDelayed({ Thread { Adb.quietSystem(applicationContext) }.start() }, 3_000)
         updates.postDelayed(airplayWatch, 30_000)
         updates.postDelayed(aerialWatch, 30_000)
         registerReceiver(volumeChanged, android.content.IntentFilter("android.media.VOLUME_CHANGED_ACTION"))

@@ -466,6 +466,7 @@ class MainActivity : Activity() {
             .setTitle("Пульт: ${RemoteServer.url()}\nВерсия 1.0.${Updater.currentBuild(this)} · кнопки: $adb · плеер: $player" +
                 "\nКлавиатура: " + (if (kbOk) "наша (Apple TV)" else "системная (" + (android.provider.Settings.Secure.getString(contentResolver, "default_input_method") ?: "?").substringBefore('/') + ")") +
                 (lastOff?.let { "\nПоследнее выключение: $it" } ?: "") +
+                (getSharedPreferences("home", MODE_PRIVATE).getStringSet("quieted", null)?.takeIf { it.isNotEmpty() }?.let { "\nОтключены всплывающие окна: ${it.joinToString()}" } ?: "") +
                 (lastCrash?.let { "\nОшибка: $it" } ?: "") +
                 (volUi?.let { "\nРодная громкость: $it" } ?: ""))
             .setItems(arrayOf(

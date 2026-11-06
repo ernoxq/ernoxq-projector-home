@@ -114,6 +114,37 @@ object Adb {
         return shell(ctx, "am broadcast -a android.intent.action.ACTION_REQUEST_SHUTDOWN --ez android.intent.extra.KEY_CONFIRM false")
     }
 
+    /**
+     * No more system pop-ups:
+     *  - "Use a different app" (which home screen?): Android forgets our choice whenever this app is updated,
+     *    so the choice is set again at every start.
+     *  - The firmware's "NfxAccessibilityService has detected a new version update" nag: its package is
+     *    switched off (not removed). `pm enable <package>` brings it back; the names are kept in "quieted".
+     */
+    fun quietSystem(ctx: Context) {
+        val pkg = ctx.packageName
+        if (!shell(ctx, "cmd package set-home-activity $pkg/$pkg.MainActivity")) return
+        val pm = ctx.packageManager
+        val nags = ArrayList<String>()
+        for (ai in pm.getInstalledApplications(0)) {
+            if (ai.packageName == pkg || !ai.enabled) continue
+            val label = try { pm.getApplicationLabel(ai).toString() } catch (_: Exception) { "" }
+            var hit = ai.packageName.contains("nfx", true) || label.contains("nfx", true)
+            if (!hit) {
+                val services = try { pm.getPackageInfo(ai.packageName, android.content.pm.PackageManager.GET_SERVICES).services } catch (_: Exception) { null }
+                hit = services?.any { it.name.contains("NfxAccessibility", true) } == true
+            }
+            if (hit) nags += ai.packageName
+        }
+        val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+        val done = prefs.getStringSet("quieted", emptySet())!!.toMutableSet()
+        for (p in nags) {
+            shell(ctx, "am force-stop $p")
+            if (shell(ctx, "pm disable-user --user 0 $p")) done += p
+        }
+        prefs.edit().putStringSet("quieted", done).apply()
+    }
+
     /** Makes our Apple TV-style keyboard the one Android uses. */
     fun useOurKeyboard(ctx: Context): Boolean {
         val id = "${ctx.packageName}/.TvKeyboard"
@@ -182,7 +213,7 @@ object Adb {
         shell(ctx, "appops set $pkg SYSTEM_ALERT_WINDOW allow")
         // Lets the remote know which app is on screen without the heavy `dumpsys`.
         shell(ctx, "appops set $pkg GET_USAGE_STATS allow")
-        shell(ctx, "cmd package set-home-activity $pkg/$pkg.MainActivity")
+        quietSystem(ctx)
         shell(ctx, "settings put global window_animation_scale 0.5")
         shell(ctx, "settings put global transition_animation_scale 0.5")
         shell(ctx, "settings put global animator_duration_scale 0.5")

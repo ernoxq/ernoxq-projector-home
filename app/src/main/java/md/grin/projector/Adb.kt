@@ -124,6 +124,11 @@ object Adb {
     fun quietSystem(ctx: Context) {
         val pkg = ctx.packageName
         if (!shell(ctx, "cmd package set-home-activity $pkg/$pkg.MainActivity")) return
+        // Looking through every installed app is heavy: once per version is enough (switched-off apps stay off).
+        val prefs0 = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+        val build = Updater.currentBuild(ctx)
+        if (prefs0.getLong("quiet_scan", -1) == build) return
+        prefs0.edit().putLong("quiet_scan", build).apply()
         val pm = ctx.packageManager
         val nags = ArrayList<String>()
         for (ai in pm.getInstalledApplications(0)) {

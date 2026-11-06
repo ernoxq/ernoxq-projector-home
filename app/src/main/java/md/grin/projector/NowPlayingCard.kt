@@ -141,9 +141,9 @@ class NowPlayingCard(ctx: Context) : LinearLayout(ctx) {
         private val frame = object : Runnable {
             override fun run() {
                 if (!running) return
-                t += 0.05f
+                t += 0.1f
                 invalidate()
-                postDelayed(this, 50)
+                postDelayed(this, 100)
             }
         }
         var running = false

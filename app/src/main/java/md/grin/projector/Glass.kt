@@ -59,13 +59,13 @@ object Glass {
             setStroke(maxOf(2, Ui.px(2)), 0xA6FFFFFF.toInt())
         }
         v.background = normal
-        v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         v.setOnFocusChangeListener { view, has ->
             view.background = if (has) focused else normal
             if (has) Sounds.tick()
             view.animate().cancel()
+            // A GPU layer only for the 140 ms of the lift, not kept for every card all the time.
             view.animate().scaleX(if (has) lift else 1f).scaleY(if (has) lift else 1f)
-                .setDuration(140).setInterpolator(EASE).start()
+                .setDuration(140).setInterpolator(EASE).withLayer().start()
         }
     }
 

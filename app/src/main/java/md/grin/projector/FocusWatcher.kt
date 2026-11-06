@@ -32,21 +32,11 @@ class FocusWatcher : AccessibilityService() {
         if (e.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = e.packageName?.toString() ?: return
         if (pkg == packageName) return
-        val hint = e.text.joinToString(" ") + " " + (e.className ?: "")
-        if (!hint.contains("update", true) && !hint.contains("Dialog", true) && !hint.contains("обновлен", true)) return
-        val root = try { rootInActiveWindow } catch (_: Exception) { null } ?: return
-        val nag = listOf("detected a new version", "Version update").any { root.findAccessibilityNodeInfosByText(it).isNotEmpty() }
+        // Only the event's own text is read (no access to other apps' screens, which made every app slower).
+        val text = e.text.joinToString(" ")
+        val nag = text.contains("detected a new version", true) || text.contains("Version update", true)
         if (!nag) return
-        val cancel = listOf("Cancel", "Отмена", "Later", "Позже").firstNotNullOfOrNull { label ->
-            root.findAccessibilityNodeInfosByText(label).firstNotNullOfOrNull { n ->
-                var c: android.view.accessibility.AccessibilityNodeInfo? = n
-                while (c != null && !c.isClickable) c = c.parent
-                c
-            }
-        }
-        if (cancel == null || !cancel.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)) {
-            performGlobalAction(GLOBAL_ACTION_BACK)
-        }
+        performGlobalAction(GLOBAL_ACTION_BACK)
         if (pkg !in KEEP) {
             val prefs = getSharedPreferences("home", MODE_PRIVATE)
             val set = prefs.getStringSet("quieted", emptySet())!!.toMutableSet()

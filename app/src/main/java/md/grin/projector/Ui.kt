@@ -163,8 +163,6 @@ object Ui {
         val normal = round(bg, radius)
         val focused = round(bg, radius, 4, ring)
         v.background = normal
-        // A permanent GPU layer: the card is drawn once, and growing it on focus is just moving a texture.
-        v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         v.setOnFocusChangeListener { view, has ->
             view.background = if (has) focused else normal
             if (has) Sounds.tick()
@@ -174,6 +172,7 @@ object Ui {
                 .scaleY(if (has) 1.05f else 1f)
                 .setDuration(120)
                 .setInterpolator(FOCUS_EASE)
+                .withLayer()
                 .start()
         }
     }

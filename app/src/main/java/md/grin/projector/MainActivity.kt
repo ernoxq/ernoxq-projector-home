@@ -58,7 +58,6 @@ class MainActivity : Activity() {
 
     /** Tiles are rebuilt only when an app is installed, removed or updated. */
     private var tilesDirty = true
-    private var lastTrim = 0L
     private val packagesChanged = object : android.content.BroadcastReceiver() {
         override fun onReceive(c: android.content.Context, i: Intent) {
             Apps.invalidate()
@@ -100,12 +99,9 @@ class MainActivity : Activity() {
         super.onResume()
         App.isForeground = true
         if (tilesDirty) { renderTiles(); tilesDirty = false }
-        val now = android.os.SystemClock.elapsedRealtime()
         if (!TvKeyboard.isDefault(this)) Thread { Adb.useOurKeyboard(applicationContext) }.start()
-        if (now - lastTrim > 5 * 60_000) {
-            lastTrim = now
-            Thread { Adb.shell(applicationContext, "am kill-all") }.start()
-        }
+        // (No more "am kill-all": it closed Spotify whenever it was paused or in the background,
+        //  so songs vanished and wouldn't come back. Android manages memory well enough on its own.)
         Media.attach(applicationContext)
         Media.listen(mediaChanged)
         lastMinute = ""

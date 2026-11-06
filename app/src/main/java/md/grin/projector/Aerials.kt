@@ -4,8 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Matrix
-import android.graphics.SurfaceTexture
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
@@ -17,7 +15,6 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
-import android.view.TextureView
 import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
@@ -206,6 +203,8 @@ object Aerials {
                     stored = storedCount
                     total = all(ctx).size
                     // Little stored yet: the lightest flights first, so a picture shows up soon.
+                    // With music on, only the first few are saved (slowly); the rest waits for silence.
+                    if (musicOn(ctx) && storedCount >= 3) { SystemClock.sleep(5_000); continue }
                     val todo = (if (storedCount < 4) missing.minByOrNull { it.mb } else missing.randomOrNull()) ?: break
                     if (!makeRoom(ctx)) break
                     try { download(ctx, todo, file(ctx, todo)); fails = 0 } catch (_: Exception) { fails++; SystemClock.sleep(5_000) }
@@ -272,9 +271,14 @@ object Aerials {
 }
 
 /** The picture itself: video filling the screen, the place at the bottom left, the time at the bottom right. */
-class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureListener {
+/**
+ * The video sits on its own hardware plane (SurfaceView): the projector shows it directly, without the GPU
+ * copying every frame into the app's picture as a TextureView does. Fades are a black curtain above it.
+ */
+class AerialView(ctx: Context) : FrameLayout(ctx), android.view.SurfaceHolder.Callback {
     private val main = Handler(Looper.getMainLooper())
-    private val video = TextureView(ctx)
+    private val video = android.view.SurfaceView(ctx)
+    private val curtain = View(ctx).apply { setBackgroundColor(Color.BLACK) }
     private val labels = Ui.col(ctx)
     private val country: TextView
     private val place: TextView
@@ -310,9 +314,9 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
     init {
         Ui.init(ctx)
         setBackgroundColor(Color.BLACK)
-        video.surfaceTextureListener = this
-        video.alpha = 0f
-        addView(video, LayoutParams(Ui.MATCH, Ui.MATCH))
+        video.holder.addCallback(this)
+        addView(video, LayoutParams(Ui.MATCH, Ui.MATCH, Gravity.CENTER))
+        addView(curtain, LayoutParams(Ui.MATCH, Ui.MATCH))
         addView(View(ctx).apply {
             background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x66000000, 0))
         }, LayoutParams(Ui.MATCH, Ui.px(170), Gravity.BOTTOM))
@@ -386,11 +390,15 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         Aerials.playingFile = null
     }
 
+    /** The flight being stopped: the next one waits for its decoder to be freed. */
+    private var previous: FlightPlayer? = null
+
     private fun releasePlayer() {
         val p = player ?: return
         player = null
         ready = false
         try { p.release() } catch (_: Exception) {}
+        previous = p
     }
 
     private val nextClip = Runnable { playNext() }
@@ -411,8 +419,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         main.removeCallbacks(nextClip)
         revealed = false
         syncLabels()
-        video.animate().cancel()
-        video.animate().alpha(0f).setStartDelay(0).setDuration(350).withEndAction {
+        curtain.animate().cancel()
+        curtain.animate().alpha(1f).setStartDelay(0).setDuration(350).withEndAction {
             if (running) playNext(target, idx)
         }.start()
     }
@@ -433,7 +441,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         val s = surface ?: return
         main.removeCallbacks(nextClip)
         releasePlayer()
-        video.animate().cancel(); video.alpha = 0f
+        curtain.animate().cancel(); curtain.alpha = 1f
         labels.animate().cancel(); labels.alpha = 0f
         labelsOn = false
         revealed = false
@@ -472,7 +480,8 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         })
         me = p
         player = p
-        p.start(f?.path, if (f == null) Aerials.source(c) else null, Aerials.headers)
+        p.start(f?.path, if (f == null) Aerials.source(c) else null, Aerials.headers, previous)
+        previous = null
     }
 
     /** A clip that won't play is skipped; if it was a saved file, it's thrown away and fetched again later. */
@@ -506,21 +515,22 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         country.visibility = if (c.country.isEmpty()) View.GONE else View.VISIBLE
         labels.requestLayout()
         revealed = true
-        video.animate().cancel()
-        video.animate().alpha(1f).setStartDelay(0).setDuration(1200).start()
+        curtain.animate().cancel()
+        curtain.animate().alpha(0f).setStartDelay(0).setDuration(1200).start()
         syncLabels()
     }
 
     /** Fills the screen without stretching, if a clip isn't exactly 16:9. */
     private fun crop(w: Int, h: Int) {
-        val vw = video.width.toFloat()
-        val vh = video.height.toFloat()
-        if (w <= 0 || h <= 0 || vw <= 0 || vh <= 0) return
-        val r = (w.toFloat() / h) / (vw / vh)
-        val m = Matrix()
-        if (r > 1) m.setScale(r, 1f, vw / 2, vh / 2) else m.setScale(1f, 1 / r, vw / 2, vh / 2)
-        video.setTransform(m)
-        video.invalidate()
+        val sw = width
+        val sh = height
+        if (w <= 0 || h <= 0 || sw <= 0 || sh <= 0) return
+        // Fill the screen without stretching: the video plane is made larger than the screen and centred.
+        val r = (w.toFloat() / h) / (sw.toFloat() / sh)
+        val lw = if (r > 1) (sw * r).toInt() else sw
+        val lh = if (r > 1) sh else (sh / r).toInt()
+        val lp = video.layoutParams as LayoutParams
+        if (lp.width != lw || lp.height != lh) { lp.width = lw; lp.height = lh; video.layoutParams = lp }
     }
 
     private val tick = object : Runnable {
@@ -545,7 +555,7 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
                     val left = dur - pos
                     if (!fading && dur > 4000 && left in 1..1600) {
                         fading = true
-                        video.animate().alpha(0f).setDuration(1200).start()
+                        curtain.animate().alpha(1f).setDuration(1200).start()
                     }
                     // Stuck on a slow connection for 20 seconds: move on.
                     if (pos != lastPos) { lastPos = pos; stuckSince = now }
@@ -556,20 +566,19 @@ class AerialView(ctx: Context) : FrameLayout(ctx), TextureView.SurfaceTextureLis
         }
     }
 
-    override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
-        surface = Surface(st)
+    override fun surfaceCreated(holder: android.view.SurfaceHolder) {
+        surface = holder.surface
         if (running) playNext()
     }
 
-    override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
+    override fun surfaceDestroyed(holder: android.view.SurfaceHolder) {
         releasePlayer()
-        surface?.release()
+        // The decoder must let go of the surface before it disappears.
+        previous?.awaitEnd(600)
         surface = null
-        return true
     }
 
-    override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) {}
-    override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
+    override fun surfaceChanged(holder: android.view.SurfaceHolder, format: Int, w: Int, h: Int) {}
 }
 
 /** Our own launch of the screensaver from the home screen. Any button brings the home screen back. */

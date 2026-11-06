@@ -32,19 +32,22 @@ class FlightPlayer(private val surface: Surface, private val listener: Listener)
     @Volatile var durationMs = 0L
         private set
 
-    fun start(path: String?, url: String?, headers: Map<String, String>) {
-        thread = Thread({ run(path, url, headers) }, "flight").apply { priority = Thread.NORM_PRIORITY + 1; start() }
+    /**
+     * Starts in the background. [after] is the flight before it: its decoder is fully freed first, so there are
+     * never two Full HD decoders in memory at once (on this projector that could push Spotify out of memory),
+     * and the screen surface is free for the new one. Nothing here blocks the screen.
+     */
+    fun start(path: String?, url: String?, headers: Map<String, String>, after: FlightPlayer? = null) {
+        thread = Thread({
+            after?.awaitEnd(4000)
+            if (!stopped) run(path, url, headers)
+        }, "flight").apply { start() }
     }
 
-    /**
-     * Stops and frees the decoder. Waits briefly so the next flight can take over the same screen surface
-     * (two decoders can't draw into one surface at once).
-     */
-    fun release() {
-        stopped = true
-        thread?.let { t -> try { t.join(800) } catch (_: InterruptedException) {} }
-        thread = null
-    }
+    /** Stops the decoder; it is freed by its own thread a moment later. */
+    fun release() { stopped = true }
+
+    fun awaitEnd(ms: Long) { try { thread?.join(ms) } catch (_: InterruptedException) {} }
 
     private fun post(block: () -> Unit) = main.post { if (!stopped) block() }
 

@@ -32,7 +32,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             socket = ss
             while (!isInterrupted) {
                 val s = ss.accept()
-                pool.execute { handle(s) }
+                // Any error in one request (a phone that went away mid-answer…) must never take the app down.
+                pool.execute { try { handle(s) } catch (_: Throwable) {} }
             }
         } catch (_: Exception) {
         }
@@ -66,7 +67,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                     else -> route(uri, out)
                 }
             } catch (e: Exception) {
-                send(out, 500, "application/json", json("ok" to false, "error" to (e.message ?: "error")).toByteArray())
+                try { send(out, 500, "application/json", json("ok" to false, "error" to (e.message ?: "error")).toByteArray()) } catch (_: Throwable) {}
             }
         }
     }
@@ -113,9 +114,11 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                     }
                 }
             }
+        } catch (_: Throwable) {
+            // The phone dropped the connection: it reconnects by itself.
         } finally {
             // Phone locked or page closed: let go of every button so nothing stays pressed.
-            padInput(0, 0, 0)
+            try { padInput(0, 0, 0) } catch (_: Throwable) {}
         }
     }
 
@@ -193,6 +196,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
         return JSONObject().put("games", arr).put("systems", systems)
             .put("retroarch", Games.retroArch(ctx) != null).put("busy", Games.busy).put("status", Games.status)
             .put("storage", Games.canWriteStorage()).put("playing", Games.playingBuiltin ?: Games.current ?: "")
+            .put("crash", ctx.getSharedPreferences("home", Context.MODE_PRIVATE).getString("last_crash", "") ?: "")
             .put("builtin", JSONArray().also { a -> MiniGame.all().forEach { g -> a.put(JSONObject().put("key", g.key).put("title", g.title).put("hint", g.hint)) } })
             .put("free", Games.root.usableSpace.takeIf { it > 0 } ?: android.os.Environment.getExternalStorageDirectory().usableSpace)
             .toString()

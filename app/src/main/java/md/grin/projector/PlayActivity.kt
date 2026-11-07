@@ -85,9 +85,16 @@ class PlayActivity : Activity(), SurfaceHolder.Callback {
             last = now
             input.prev = input.cur
             input.cur = GamePad.phone or keys
-            step(dt)
-            game.draw(fc, gp)
-            val c: Canvas = try { holder.lockHardwareCanvas() } catch (_: Throwable) { holder.lockCanvas() } ?: continue
+            // A bug in one frame must not close the game (or the whole app): note it and carry on.
+            try {
+                step(dt)
+                game.draw(fc, gp)
+            } catch (e: Throwable) {
+                note(e)
+                game.over = true
+            }
+            val c: Canvas = try { holder.lockHardwareCanvas() } catch (_: Throwable) { try { holder.lockCanvas() } catch (_: Throwable) { null } }
+                ?: run { SystemClock.sleep(16); null } ?: continue
             try {
                 val cw = c.width.toFloat(); val ch = c.height.toFloat()
                 val s = minOf(cw / W, ch / H)
@@ -119,13 +126,20 @@ class PlayActivity : Activity(), SurfaceHolder.Callback {
                     text.textSize = 28 * u
                     c.drawText(if (game.over) "✕ — ещё раз      ○ — выйти" else "✕ — продолжить      ○ — выйти", cw / 2, ch * 0.66f, text)
                 }
+            } catch (e: Throwable) {
+                note(e)
             } finally {
-                holder.unlockCanvasAndPost(c)
+                try { holder.unlockCanvasAndPost(c) } catch (_: Throwable) { running = false }
             }
             val spent = SystemClock.uptimeMillis() - now
             if (spent < 16) SystemClock.sleep(16 - spent)
         }
         frame.recycle()
+    }
+
+    private fun note(e: Throwable) {
+        val where = e.stackTrace.firstOrNull { it.className.startsWith("md.grin") }?.let { "${it.fileName}:${it.lineNumber}" } ?: ""
+        getSharedPreferences("home", MODE_PRIVATE).edit().putString("last_crash", "${game.key} ${e.javaClass.simpleName}: ${e.message?.take(80)} $where").apply()
     }
 
     private fun step(dt: Float) {

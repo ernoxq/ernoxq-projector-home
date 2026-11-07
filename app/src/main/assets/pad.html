@@ -183,6 +183,7 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
     Меню не открывается? Нажми <b>START</b> и <b>SELECT</b> вместе.</div>
   <div class="row"><button class="btn glass" onclick="api('/api/games/retroarch');closeSheet()">Открыть RetroArch</button>
     <button class="btn glass" onclick="api('/api/games/open');closeSheet()">Список игр на проекторе</button></div>
+  <div class="note" id="crash" style="opacity:.6;font-size:11px"></div>
  </div>
 </div>
 
@@ -286,6 +287,7 @@ function load(){
     if(!r||!r.games)return;
     info=r;paintStatus();
     $('noRa').classList.toggle('hidden',!!r.retroarch);
+    $('crash').textContent=r.crash?('Последний сбой: '+r.crash):'';
     $('builtin').innerHTML=(r.builtin||[]).map(g=>'<div class="game glass" data-g="'+esc(g.key)+'"><div class="t"><b>'+esc(g.title)+'</b><span>'+esc(g.hint)+'</span></div></div>').join('');
     $('raSt').textContent=r.busy?r.status:(r.status||'');
     if(r.status&&(r.busy||/Готово|Скачал|бесплат|libretro/.test(r.status)))$('freeSt').textContent=r.status;

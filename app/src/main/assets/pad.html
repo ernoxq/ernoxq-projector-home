@@ -21,13 +21,14 @@ button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0
 /* ---------- controller ---------- */
 .pad{position:fixed;inset:0;touch-action:none;display:grid;
   padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 14px);
-  grid-template-columns:1fr auto 1fr;grid-template-rows:auto auto 1fr;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:auto auto 1fr;
   grid-template-areas:"top top top" "sl . sr" "dpad mid face";gap:10px 14px}
 @media (orientation:portrait){
-  .pad{grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr auto 1.6fr;
-    grid-template-areas:"top top" "sl sr" "mid mid" "dpad face" ". ."}
+  .pad{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr auto auto 6vh;row-gap:22px;
+    grid-template-areas:"top top" "sl sr" ". ." "mid mid" "dpad face" ". ."}
 }
-.top{grid-area:top;display:flex;align-items:center;gap:10px;touch-action:manipulation}
+.top{grid-area:top;display:flex;align-items:center;gap:8px;touch-action:manipulation;min-width:0}
+.top .sm{flex-shrink:0}
 .top .sm{height:44px;min-width:44px;padding:0 14px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600}
 .top .sm:active{transform:scale(.94)}
 .st{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -35,13 +36,13 @@ button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0
 .st .dot.on{background:#30D158}
 .st span{overflow:hidden;text-overflow:ellipsis}
 
-.sh{display:flex;gap:10px}
+.sh{display:flex;gap:10px;min-width:0}
 .sh.l{grid-area:sl}.sh.r{grid-area:sr;justify-content:flex-end}
-.sb{width:min(26vw,128px);height:46px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#C7C7CC;transition:background .08s,transform .08s}
+.sb{flex:1 1 0;min-width:0;max-width:140px;height:46px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#C7C7CC;transition:background .08s,transform .08s}
 .sb.on,.fb.on,.cb.on{transform:scale(.93);background:#3A3A3E}
 
-.dpad{grid-area:dpad;align-self:center;justify-self:center;position:relative;width:var(--d);height:var(--d);border-radius:50%;--d:min(48vh,40vw)}
-@media (orientation:portrait){.dpad{--d:min(44vw,32vh)}}
+.dpad{grid-area:dpad;align-self:center;justify-self:center;position:relative;width:var(--d);height:var(--d);border-radius:50%;--d:min(48vh,34vw)}
+@media (orientation:portrait){.dpad{--d:min(42vw,32vh)}}
 .dpad .arm{position:absolute;background:#2C2C2E;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:background .08s}
 .dpad .v{left:33%;width:34%;top:4%;height:92%;border-radius:18px}
 .dpad .h{top:33%;height:34%;left:4%;width:92%;border-radius:18px}
@@ -54,8 +55,9 @@ button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0
 @media (orientation:portrait){.mid{flex-direction:row;justify-content:center}}
 .cb{width:92px;height:38px;border-radius:19px;font-size:12px;font-weight:700;letter-spacing:.08em;color:#AEAEB2;display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s}
 
-.face{grid-area:face;align-self:center;justify-self:center;position:relative;width:var(--f);height:var(--f);--f:min(50vh,40vw)}
-@media (orientation:portrait){.face{--f:min(46vw,33vh)}}
+.face{grid-area:face;align-self:center;justify-self:center;position:relative;width:var(--f);height:var(--f);--f:min(50vh,34vw)}
+@media (orientation:portrait){.face{--f:min(42vw,33vh)}}
+@media (orientation:portrait) and (max-width:400px){.top .sm.lbl2 span{display:none}}
 .fb{position:absolute;width:38%;height:38%;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s}
 .fb svg{width:46%;height:46%;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .fb.tr{left:31%;top:0}.fb.x{left:31%;bottom:0}.fb.sq{left:0;top:31%}.fb.o{right:0;top:31%}
@@ -100,8 +102,8 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
     </a>
     <div class="st"><i class="dot" id="dot"></i><span id="st">Подключаюсь…</span></div>
     <button class="sm glass" onclick="cmd('MENU_TOGGLE')" aria-label="Меню игры">Меню</button>
-    <button class="sm glass" onclick="openSheet()" aria-label="Игры">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Игры
+    <button class="sm glass lbl2" onclick="openSheet()" aria-label="Игры">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span>Игры</span>
     </button>
   </div>
 
@@ -179,7 +181,7 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
 
 <script>
 const $=id=>document.getElementById(id);
-const api=p=>fetch(p).then(r=>r.json()).catch(()=>({ok:false}));
+const api=p=>fetch(p).then(r=>{httpOk=r.ok;return r.json()}).catch(()=>{httpOk=false;return {ok:false}});
 function cmd(c){api('/api/games/cmd?c='+c)}
 function toast(s){$('st').textContent=s;setTimeout(paintStatus,1500)}
 
@@ -259,10 +261,12 @@ window.addEventListener('mouseup',()=>{if(mdown){mdown=false;setBits(0)}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)setBits(0)});
 
 /* ---------- status line ---------- */
-let info={};
+let info={},httpOk=false;
 function paintStatus(){
   $('dot').classList.toggle('on',wsOk);
-  $('st').textContent=!wsOk?'Подключаюсь…':info.playing?info.playing:'Геймпад готов';
+  const live=wsOk||httpOk;
+  $('dot').classList.toggle('on',live);
+  $('st').textContent=!live?'Подключаюсь…':info.playing?info.playing:'Геймпад готов';
 }
 
 /* ---------- games sheet ---------- */

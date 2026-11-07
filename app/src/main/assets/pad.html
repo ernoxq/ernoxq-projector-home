@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Геймпад</title>
+<link rel="apple-touch-icon" href="/icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--line:rgba(255,255,255,.09);--fg:#F2F2F4;--dim:#8E8E93;--accent:#FBE38E;
+  --x:#7FA8FF;--o:#FF6B6B;--sq:#F28DD8;--tr:#5FD3B0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:'Inter Tight',-apple-system,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font-family:inherit;border:none;color:var(--fg);background:none;padding:0;cursor:pointer}
+.glass{background:linear-gradient(180deg,#262628,#1A1A1C);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px var(--line)}
+
+/* ---------- controller ---------- */
+.pad{position:fixed;inset:0;touch-action:none;display:grid;
+  padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 14px);
+  grid-template-columns:1fr auto 1fr;grid-template-rows:auto auto 1fr;
+  grid-template-areas:"top top top" "sl . sr" "dpad mid face";gap:10px 14px}
+@media (orientation:portrait){
+  .pad{grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr auto 1.6fr;
+    grid-template-areas:"top top" "sl sr" "mid mid" "dpad face" ". ."}
+}
+.top{grid-area:top;display:flex;align-items:center;gap:10px;touch-action:manipulation}
+.top .sm{height:44px;min-width:44px;padding:0 14px;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600}
+.top .sm:active{transform:scale(.94)}
+.st{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .dot{width:8px;height:8px;border-radius:4px;background:#5A5A5E;flex-shrink:0}
+.st .dot.on{background:#30D158}
+.st span{overflow:hidden;text-overflow:ellipsis}
+
+.sh{display:flex;gap:10px}
+.sh.l{grid-area:sl}.sh.r{grid-area:sr;justify-content:flex-end}
+.sb{width:min(26vw,128px);height:46px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#C7C7CC;transition:background .08s,transform .08s}
+.sb.on,.fb.on,.cb.on{transform:scale(.93);background:#3A3A3E}
+
+.dpad{grid-area:dpad;align-self:center;justify-self:center;position:relative;width:var(--d);height:var(--d);border-radius:50%;--d:min(48vh,40vw)}
+@media (orientation:portrait){.dpad{--d:min(44vw,32vh)}}
+.dpad .arm{position:absolute;background:#2C2C2E;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:background .08s}
+.dpad .v{left:33%;width:34%;top:4%;height:92%;border-radius:18px}
+.dpad .h{top:33%;height:34%;left:4%;width:92%;border-radius:18px}
+.dpad .lit{position:absolute;width:34%;height:34%;border-radius:14px;background:rgba(255,255,255,.22);opacity:0;transition:opacity .06s}
+.dpad .lit.u{left:33%;top:4%}.dpad .lit.d{left:33%;bottom:4%}.dpad .lit.l{top:33%;left:4%}.dpad .lit.r{top:33%;right:4%}
+.dpad .lit.on{opacity:1}
+.dpad svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+.mid{grid-area:mid;align-self:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+@media (orientation:portrait){.mid{flex-direction:row;justify-content:center}}
+.cb{width:92px;height:38px;border-radius:19px;font-size:12px;font-weight:700;letter-spacing:.08em;color:#AEAEB2;display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s}
+
+.face{grid-area:face;align-self:center;justify-self:center;position:relative;width:var(--f);height:var(--f);--f:min(50vh,40vw)}
+@media (orientation:portrait){.face{--f:min(46vw,33vh)}}
+.fb{position:absolute;width:38%;height:38%;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s}
+.fb svg{width:46%;height:46%;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.fb.tr{left:31%;top:0}.fb.x{left:31%;bottom:0}.fb.sq{left:0;top:31%}.fb.o{right:0;top:31%}
+.fb.tr svg{stroke:var(--tr)}.fb.x svg{stroke:var(--x)}.fb.sq svg{stroke:var(--sq)}.fb.o svg{stroke:var(--o)}
+
+/* ---------- games sheet ---------- */
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(14,14,16,.82);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);opacity:0;pointer-events:none;transition:opacity .25s;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.sheet.show{opacity:1;pointer-events:auto}
+.sin{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 20px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-left) + 20px)}
+.shead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.shead h2{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.x2{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center}
+.row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.btn{height:48px;padding:0 18px;border-radius:24px;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn.main{background:#F5F5F7;color:#111}
+.btn:active{transform:scale(.95)}
+.note{font-size:13px;line-height:1.45;color:var(--dim);margin:6px 2px 16px}
+.note b{color:#D1D1D6;font-weight:600}
+.card{border-radius:22px;padding:14px;margin-bottom:12px}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--dim);margin:20px 4px 10px;text-transform:uppercase}
+.game{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-radius:18px;margin-bottom:8px}
+.game:active{background:rgba(255,255,255,.08)}
+.game .t{flex:1;min-width:0}
+.game b{display:block;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game span{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+.game .del{width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;opacity:.6}
+.up{margin-bottom:8px}
+.up .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:8px;overflow:hidden}
+.up .bar i{display:block;height:100%;width:0;background:#30D158;transition:width .2s}
+.up .sub{font-size:12px;color:var(--dim);margin-top:6px}
+select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;border:none;padding:0 12px;background:#2C2C2E;color:#F5F5F7;width:100%;margin-top:10px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="pad" id="pad">
+  <div class="top">
+    <a class="sm glass" href="/" aria-label="Обычный пульт" style="color:inherit;text-decoration:none">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5L7.5 12l7.5 7.5"/></svg>
+    </a>
+    <div class="st"><i class="dot" id="dot"></i><span id="st">Подключаюсь…</span></div>
+    <button class="sm glass" onclick="cmd('MENU_TOGGLE')" aria-label="Меню игры">Меню</button>
+    <button class="sm glass" onclick="openSheet()" aria-label="Игры">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Игры
+    </button>
+  </div>
+
+  <div class="sh l"><div class="sb glass" data-b="8">L2</div><div class="sb glass" data-b="6">L1</div></div>
+  <div class="sh r"><div class="sb glass" data-b="7">R1</div><div class="sb glass" data-b="9">R2</div></div>
+
+  <div class="dpad" id="dpad">
+    <div class="arm v"></div><div class="arm h"></div>
+    <div class="lit u" id="lu"></div><div class="lit d" id="ld"></div><div class="lit l" id="ll"></div><div class="lit r" id="lr"></div>
+    <svg viewBox="0 0 100 100"><g fill="#8E8E93"><path d="M50 12l6 8H44z"/><path d="M50 88l6-8H44z"/><path d="M12 50l8-6v12z"/><path d="M88 50l-8-6v12z"/></g></svg>
+  </div>
+
+  <div class="mid">
+    <div class="cb glass" data-b="10">SELECT</div>
+    <div class="cb glass" data-b="11">START</div>
+  </div>
+
+  <div class="face">
+    <div class="fb glass tr" data-b="4"><svg viewBox="0 0 24 24"><path d="M12 4.5L20.5 19h-17z"/></svg></div>
+    <div class="fb glass sq" data-b="3"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg></div>
+    <div class="fb glass o" data-b="1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></svg></div>
+    <div class="fb glass x" data-b="0"><svg viewBox="0 0 24 24"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet">
+ <div class="sin">
+  <div class="shead">
+    <h2>Игры</h2>
+    <button class="x2 glass" onclick="closeSheet()" aria-label="Закрыть"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+
+  <div id="noRa" class="card glass hidden">
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">Нужен эмулятор RetroArch</div>
+    <div class="note" style="margin-top:0">Бесплатный и с открытым кодом. Скачается с сайта libretro и установится на проектор сам.</div>
+    <button class="btn main" onclick="api('/api/games/install');setTimeout(load,800)">Установить RetroArch</button>
+    <div class="note" id="raSt"></div>
+  </div>
+
+  <div id="inGame" class="hidden">
+    <div class="lbl">Сейчас</div>
+    <div class="row">
+      <button class="btn glass" onclick="cmd('SAVE_STATE');toast('Сохранено')">Сохранить</button>
+      <button class="btn glass" onclick="cmd('LOAD_STATE');closeSheet()">Загрузить</button>
+      <button class="btn glass" onclick="cmd('RESET');closeSheet()">Заново</button>
+      <button class="btn glass" style="color:#FF6B6B" onclick="api('/api/games/cmd?c=quit');closeSheet()">Выйти из игры</button>
+    </div>
+  </div>
+
+  <div class="lbl">Добавить игру</div>
+  <div class="row">
+    <button class="btn main" onclick="$('file').click()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3"/></svg>Загрузить с телефона
+    </button>
+    <input type="file" id="file" multiple class="hidden">
+  </div>
+  <div id="ups"></div>
+  <div class="note">Файл игры из «Файлов» на iPhone уходит прямо на проектор. Приставка определяется по файлу:
+    <b>.cue + .bin, .chd, .pbp</b> — PlayStation · <b>.nes</b> · <b>.sfc</b> · <b>.md</b> · <b>.gba</b> · <b>.gb</b>. Архивы <b>.zip</b> тоже можно, тогда спрошу, что это за приставка.<br>
+    PS2 этот проектор не потянет. Загружай только игры, которые у тебя есть на законных основаниях.</div>
+
+  <div class="lbl" id="libLbl">На проекторе</div>
+  <div id="list"></div>
+
+  <div class="lbl">Один раз</div>
+  <div class="note" style="margin-top:0">Эмуляторы ставятся внутри RetroArch: <b>Online Updater → Core Downloader</b> и выбери
+    <b>Sony - PlayStation (PCSX ReARMed)</b>, <b>Nintendo - NES / Famicom (FCEUmm)</b>, <b>Nintendo - SNES / SFC (Snes9x 2010)</b>,
+    <b>Sega - MS/GG/MD/CD (Genesis Plus GX)</b>, <b>Nintendo - Game Boy Advance (gpSP)</b>, <b>Nintendo - Game Boy / Color (Gambatte)</b>,
+    <b>Arcade (FinalBurn Neo)</b>.<br>Бесплатные игры там же: <b>Online Updater → Content Downloader</b> (Cave Story, Doom и другие).<br>
+    Меню не открывается? Нажми <b>START</b> и <b>SELECT</b> вместе.</div>
+  <div class="row"><button class="btn glass" onclick="api('/api/games/retroarch');closeSheet()">Открыть RetroArch</button>
+    <button class="btn glass" onclick="api('/api/games/open');closeSheet()">Список игр на проекторе</button></div>
+ </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const api=p=>fetch(p).then(r=>r.json()).catch(()=>({ok:false}));
+function cmd(c){api('/api/games/cmd?c='+c)}
+function toast(s){$('st').textContent=s;setTimeout(paintStatus,1500)}
+
+/* ---------- connection: one WebSocket, every message is the whole pad state ---------- */
+let ws=null,bits=0,sent=-1,wsOk=false;
+function connect(){
+  try{ws=new WebSocket('ws://'+location.host+'/pad/ws')}catch(e){ws=null;return}
+  ws.onopen=()=>{wsOk=true;sent=-1;flush();paintStatus()};
+  ws.onclose=()=>{wsOk=false;paintStatus();setTimeout(connect,1000)};
+  ws.onerror=()=>{try{ws.close()}catch(e){}};
+}
+function flush(){
+  if(bits===sent)return;
+  if(ws&&ws.readyState===1){ws.send('p '+bits+' 0 0');sent=bits}
+  else{fetch('/api/pad?b='+bits).catch(()=>{});sent=bits}
+}
+// Repeat the state now and then, so a lost message can never leave a button stuck.
+setInterval(()=>{sent=-1;flush()},1000);
+
+/* ---------- touches: every finger is checked against what's under it, so sliding between buttons works ---------- */
+const UP=13,DOWN=14,RIGHT=15,LEFT=16;
+const dpad=$('dpad');
+function dirBits(x,y){
+  const r=dpad.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy);
+  if(d<r.width*.1)return 0;
+  const a=Math.atan2(dy,dx)*180/Math.PI; // 0 = right, 90 = down
+  let b=0;
+  if(a>-67.5&&a<67.5)b|=1<<RIGHT;
+  if(a>112.5||a<-112.5)b|=1<<LEFT;
+  if(a>22.5&&a<157.5)b|=1<<DOWN;
+  if(a<-22.5&&a>-157.5)b|=1<<UP;
+  return b;
+}
+function bitsAt(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(!el)return 0;
+  if(el.closest('#dpad'))return dirBits(x,y);
+  const b=el.closest('[data-b]');
+  return b?1<<(+b.dataset.b):0;
+}
+// A finger that started on the D-pad keeps steering it even when it slides a little off.
+const owners=new Map();
+function recompute(e){
+  let nb=0;
+  for(const t of e.touches){
+    const own=owners.get(t.identifier);
+    nb|=own==='dpad'?dirBits(t.clientX,t.clientY):bitsAt(t.clientX,t.clientY);
+  }
+  setBits(nb);
+}
+function setBits(nb){
+  if(nb===bits)return;
+  const pressed=nb&~bits;
+  bits=nb;flush();paint();
+  if(pressed&&navigator.vibrate)navigator.vibrate(12);
+}
+function paint(){
+  document.querySelectorAll('[data-b]').forEach(el=>el.classList.toggle('on',!!(bits&(1<<+el.dataset.b))));
+  $('lu').classList.toggle('on',!!(bits&(1<<UP)));$('ld').classList.toggle('on',!!(bits&(1<<DOWN)));
+  $('ll').classList.toggle('on',!!(bits&(1<<LEFT)));$('lr').classList.toggle('on',!!(bits&(1<<RIGHT)));
+}
+const pad=$('pad');
+pad.addEventListener('touchstart',e=>{
+  if(e.target.closest('.top'))return;
+  e.preventDefault();
+  for(const t of e.changedTouches){const el=document.elementFromPoint(t.clientX,t.clientY);owners.set(t.identifier,el&&el.closest('#dpad')?'dpad':'btn')}
+  recompute(e);
+},{passive:false});
+pad.addEventListener('touchmove',e=>{if(e.target.closest('.top'))return;e.preventDefault();recompute(e)},{passive:false});
+['touchend','touchcancel'].forEach(ev=>pad.addEventListener(ev,e=>{for(const t of e.changedTouches)owners.delete(t.identifier);recompute(e)}));
+// Mouse, for testing on a computer.
+let mdown=false;
+pad.addEventListener('mousedown',e=>{if(e.target.closest('.top'))return;mdown=true;setBits(bitsAt(e.clientX,e.clientY))});
+window.addEventListener('mousemove',e=>{if(mdown)setBits(bitsAt(e.clientX,e.clientY))});
+window.addEventListener('mouseup',()=>{if(mdown){mdown=false;setBits(0)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)setBits(0)});
+
+/* ---------- status line ---------- */
+let info={};
+function paintStatus(){
+  $('dot').classList.toggle('on',wsOk);
+  $('st').textContent=!wsOk?'Подключаюсь…':info.playing?info.playing:'Геймпад готов';
+}
+
+/* ---------- games sheet ---------- */
+const sheet=$('sheet');
+function openSheet(){sheet.classList.add('show');sheet.scrollTop=0;load()}
+function closeSheet(){sheet.classList.remove('show')}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function load(){
+  api('/api/games').then(r=>{
+    if(!r||!r.games)return;
+    info=r;paintStatus();
+    $('noRa').classList.toggle('hidden',!!r.retroarch);
+    $('raSt').textContent=r.busy?r.status:(r.status||'');
+    $('inGame').classList.toggle('hidden',!r.playing);
+    $('libLbl').textContent='На проекторе · '+r.games.length+' · свободно '+(r.free/1e9).toFixed(1)+' ГБ';
+    $('list').innerHTML=r.games.length?r.games.map(g=>
+      '<div class="game glass" data-p="'+esc(g.path)+'"><div class="t"><b>'+esc(g.title)+'</b><span>'+esc(g.system)+(g.mb?' · '+g.mb+' МБ':'')+'</span></div>'+
+      '<button class="del" data-del="'+esc(g.path)+'" aria-label="Удалить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 12.5h9l1-12.5M9.5 7V4.5h5V7"/></svg></button></div>').join('')
+      :'<div class="note">Пока пусто. Загрузи первую игру кнопкой выше.</div>';
+    if(r.busy)setTimeout(()=>{if(sheet.classList.contains('show'))load()},1500);
+  });
+}
+$('list').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');
+  if(d){e.stopPropagation();if(confirm('Удалить игру с проектора?'))api('/api/games/delete?path='+encodeURIComponent(d.dataset.del)).then(load);return}
+  const g=e.target.closest('[data-p]');
+  if(g){api('/api/games/play?path='+encodeURIComponent(g.dataset.p));info.playing=g.querySelector('b').textContent;paintStatus();closeSheet()}
+});
+setInterval(()=>{if(!document.hidden&&!sheet.classList.contains('show'))api('/api/games').then(r=>{if(r&&r.games){info=r;paintStatus()}})},5000);
+
+/* ---------- upload from the phone ---------- */
+const SYS={ps1:'PlayStation',nes:'NES · Денди',snes:'Super Nintendo',md:'Sega Mega Drive',gba:'Game Boy Advance',gb:'Game Boy · Color',arcade:'Аркады',dos:'DOS'};
+const EXT={cue:'ps1',chd:'ps1',pbp:'ps1',m3u:'ps1',iso:'ps1',img:'ps1',nes:'nes',fds:'nes',unf:'nes',unif:'nes',sfc:'snes',smc:'snes',
+  md:'md',gen:'md',smd:'md',sms:'md',gg:'md',gba:'gba',gb:'gb',gbc:'gb',dmg:'gb',dosz:'dos','7z':'arcade'};
+let queue=[],uploading=false;
+$('file').addEventListener('change',e=>{
+  const files=[...e.target.files];e.target.value='';
+  // A PlayStation .bin next to a .cue in the same pick belongs to it.
+  const hasCue=files.some(f=>/\.cue$/i.test(f.name));
+  files.forEach(f=>{
+    const ext=(f.name.split('.').pop()||'').toLowerCase();
+    const sys=EXT[ext]||(ext==='bin'&&hasCue?'ps1':'');
+    addUpload(f,sys);
+  });
+  next();
+});
+function addUpload(f,sys){
+  const id='u'+Math.random().toString(36).slice(2);
+  const el=document.createElement('div');el.className='up card glass';el.id=id;
+  el.innerHTML='<div class="nm">'+esc(f.name)+'</div>'+
+    (sys?'':'<select><option value="">Для какой приставки?</option>'+Object.keys(SYS).map(k=>'<option value="'+k+'">'+SYS[k]+'</option>').join('')+'</select>')+
+    '<div class="bar"><i></i></div><div class="sub">'+(sys?SYS[sys]+' · ждёт':'Выбери приставку')+' · '+(f.size/1e6).toFixed(1)+' МБ</div>';
+  $('ups').prepend(el);
+  const item={f,sys,el};
+  const s=el.querySelector('select');
+  if(s)s.addEventListener('change',()=>{item.sys=s.value;if(s.value){s.remove();el.querySelector('.sub').textContent=SYS[s.value]+' · ждёт';next()}});
+  queue.push(item);
+}
+function next(){
+  if(uploading)return;
+  const it=queue.find(q=>q.sys&&!q.done);
+  if(!it)return;
+  uploading=true;
+  const bar=it.el.querySelector('.bar i'),sub=it.el.querySelector('.sub');
+  const xhr=new XMLHttpRequest();
+  xhr.open('POST','/api/upload?name='+encodeURIComponent(it.f.name)+'&sys='+it.sys);
+  const t0=Date.now();
+  xhr.upload.onprogress=e=>{if(!e.lengthComputable)return;const p=e.loaded/e.total;bar.style.width=(p*100).toFixed(1)+'%';
+    const mbs=e.loaded/1e6/Math.max(.5,(Date.now()-t0)/1000);sub.textContent=SYS[it.sys]+' · '+Math.round(p*100)+'% · '+mbs.toFixed(1)+' МБ/с'};
+  xhr.onload=()=>{let r={};try{r=JSON.parse(xhr.responseText)}catch(e){}
+    if(r.ok){bar.style.width='100%';sub.textContent=SYS[it.sys]+' · на проекторе ✓'}else{bar.style.background='#FF453A';sub.textContent='Не загрузилось: '+(r.error||('ошибка '+xhr.status))}
+    done(it)};
+  xhr.onerror=()=>{bar.style.background='#FF453A';sub.textContent='Связь с проектором прервалась';done(it)};
+  xhr.send(it.f);
+}
+function done(it){it.done=true;uploading=false;load();next()}
+
+connect();paintStatus();
+api('/api/games').then(r=>{if(r&&r.games){info=r;paintStatus();if(!r.retroarch||!r.games.length)openSheet()}});
+</script>
+</body>
+</html>

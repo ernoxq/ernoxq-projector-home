@@ -80,6 +80,14 @@ object Adb {
     fun chars(ctx: Context, text: String): Boolean =
         writeLive(ctx, "t " + java.net.URLEncoder.encode(text, "UTF-8"))
 
+    @Volatile private var padUsedAt = 0L
+
+    /** The phone gamepad's whole state (buttons as bits, stick x/y), see [KeyServer.Pad]. */
+    fun pad(ctx: Context, bits: Int, x: Int = 0, y: Int = 0): Boolean {
+        padUsedAt = android.os.SystemClock.elapsedRealtime()
+        return writeLive(ctx, "p $bits $x $y")
+    }
+
     private val liveLock = Any()
     @Volatile private var liveUsedAt = 0L
 
@@ -88,7 +96,9 @@ object Adb {
      * (it ends by itself when its input closes); the next press starts it again in about a second.
      */
     fun closeIdleKeys() {
-        if (live == null || android.os.SystemClock.elapsedRealtime() - liveUsedAt < 5 * 60_000L) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        // While a game is on, the gamepad lives in this process: keep it for half an hour of pause.
+        if (live == null || now - liveUsedAt < 5 * 60_000L || now - padUsedAt < 30 * 60_000L) return
         synchronized(liveLock) {
             try { live?.close() } catch (_: Throwable) {}
             live = null
@@ -337,6 +347,8 @@ object Adb {
         shell(ctx, "service call alarm 3 s16 Europe/Chisinau")
         shell(ctx, "setprop persist.sys.timezone Europe/Chisinau")
         useOurScreensaver(ctx)
+        // Games folder: our app writes uploads there, RetroArch reads them.
+        Games.prepare(ctx)
         nameAirPlay(ctx)
         airplayReady(ctx)
         return true

@@ -21,7 +21,7 @@ import java.util.concurrent.Executors
  * the buttons on it call the /api/… endpoints below. Nothing leaves the home Wi-Fi.
  */
 class RemoteServer(private val ctx: Context) : Thread("remote-server") {
-    private val pool = Executors.newFixedThreadPool(4)
+    private val pool = Executors.newFixedThreadPool(6)
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var socket: ServerSocket? = null
 
@@ -49,19 +49,123 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             sock.soTimeout = 10_000
             val input = BufferedInputStream(sock.getInputStream())
             val request = readLine(input) ?: return
+            val headers = HashMap<String, String>()
             while (true) {
                 val h = readLine(input) ?: break
                 if (h.isEmpty()) break
+                val i = h.indexOf(':')
+                if (i > 0) headers[h.substring(0, i).trim().lowercase()] = h.substring(i + 1).trim()
             }
             val target = request.split(" ").getOrNull(1) ?: "/"
             val uri = Uri.parse("http://p$target")
             val out = sock.getOutputStream()
             try {
-                route(uri, out)
+                when {
+                    uri.path == "/pad/ws" && headers["upgrade"].equals("websocket", true) -> padSocket(sock, input, out, headers["sec-websocket-key"] ?: return)
+                    request.startsWith("POST ") && uri.path == "/api/upload" -> upload(uri, input, out, headers["content-length"]?.toLongOrNull() ?: -1)
+                    else -> route(uri, out)
+                }
             } catch (e: Exception) {
                 send(out, 500, "application/json", json("ok" to false, "error" to (e.message ?: "error")).toByteArray())
             }
         }
+    }
+
+    // ---------- phone gamepad: one WebSocket, each message is the pad's whole state ----------
+
+    private fun padSocket(sock: Socket, input: BufferedInputStream, out: OutputStream, key: String) {
+        val accept = android.util.Base64.encodeToString(
+            java.security.MessageDigest.getInstance("SHA-1").digest((key + "258EAFA5-E914-47DA-95CA-C5AB0DC11B92").toByteArray()),
+            android.util.Base64.NO_WRAP,
+        )
+        out.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
+            "Sec-WebSocket-Accept: $accept\r\n\r\n").toByteArray())
+        out.flush()
+        sock.soTimeout = 0
+        sock.tcpNoDelay = true
+        var touched = 0L
+        try {
+            while (true) {
+                val b0 = input.read()
+                val b1 = input.read()
+                if (b0 < 0 || b1 < 0) break
+                val op = b0 and 0x0F
+                var len = (b1 and 0x7F).toLong()
+                if (len == 126L) len = ((input.read() shl 8) or input.read()).toLong()
+                else if (len == 127L) { len = 0; repeat(8) { len = (len shl 8) or input.read().toLong() } }
+                if (len > 4096) break
+                val mask = if (b1 and 0x80 != 0) ByteArray(4) { input.read().toByte() } else null
+                val data = ByteArray(len.toInt())
+                var got = 0
+                while (got < data.size) { val n = input.read(data, got, data.size - got); if (n < 0) break; got += n }
+                if (mask != null) for (i in data.indices) data[i] = (data[i].toInt() xor mask[i % 4].toInt()).toByte()
+                when (op) {
+                    0x8 -> break
+                    0x9 -> { out.write(byteArrayOf(0x8A.toByte(), data.size.toByte()) + data); out.flush() }
+                    0x1 -> {
+                        val msg = String(data, Charsets.UTF_8)
+                        if (msg.startsWith("p ")) {
+                            val p = msg.split(' ')
+                            Adb.pad(ctx, p.getOrNull(1)?.toIntOrNull() ?: 0, p.getOrNull(2)?.toIntOrNull() ?: 0, p.getOrNull(3)?.toIntOrNull() ?: 0)
+                        }
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - touched > 5000) { touched = now; SleepTimer.touch() }
+                    }
+                }
+            }
+        } finally {
+            // Phone locked or page closed: let go of every button so nothing stays pressed.
+            Adb.pad(ctx, 0)
+        }
+    }
+
+    // ---------- games uploaded from the phone: the raw file is the request body ----------
+
+    private fun upload(uri: Uri, input: BufferedInputStream, out: OutputStream, length: Long) {
+        val name = uri.getQueryParameter("name") ?: ""
+        val sys = Games.system(uri.getQueryParameter("sys") ?: "") ?: Games.guess(name)
+        if (sys == null || sys.key == "free") return send(out, 400, "application/json", json("ok" to false, "error" to "Не понял, для какой это приставки").toByteArray())
+        if (length <= 0) return send(out, 411, "application/json", json("ok" to false, "error" to "Нет размера файла").toByteArray())
+        if (!Games.canWriteStorage()) Games.prepare(ctx)
+        if (!Games.canWriteStorage()) return send(out, 403, "application/json", json("ok" to false, "error" to "Нет доступа к памяти проектора: нажми «Настроить» в пункте управления").toByteArray())
+        val file = Games.target(sys, name)
+        val free = Games.root.usableSpace
+        if (free in 1 until length + 50_000_000) return send(out, 507, "application/json", json("ok" to false, "error" to "Мало места: свободно ${free / 1_000_000} МБ").toByteArray())
+        val part = java.io.File(file.parentFile, ".${file.name}.part")
+        try {
+            part.outputStream().buffered(256 * 1024).use { o ->
+                val buf = ByteArray(64 * 1024)
+                var left = length
+                while (left > 0) {
+                    val n = input.read(buf, 0, minOf(buf.size.toLong(), left).toInt())
+                    if (n < 0) throw java.io.IOException("связь прервалась")
+                    o.write(buf, 0, n)
+                    left -= n
+                    SleepTimer.touch()
+                }
+            }
+            file.delete()
+            if (!part.renameTo(file)) throw java.io.IOException("не удалось сохранить")
+        } catch (e: Exception) {
+            part.delete()
+            throw e
+        }
+        ok(out, json("ok" to true, "sys" to sys.key, "file" to file.name))
+    }
+
+    private fun gamesJson(): String {
+        val arr = JSONArray()
+        for (g in Games.list()) arr.put(JSONObject()
+            .put("path", Games.rel(g)).put("title", Games.displayTitle(g))
+            .put("sys", g.system.key).put("system", g.system.title)
+            .put("mb", g.file.length() / 1_000_000))
+        val systems = JSONArray()
+        for (s in Games.SYSTEMS) systems.put(JSONObject().put("key", s.key).put("title", s.title).put("exts", JSONArray(s.exts.toList())))
+        return JSONObject().put("games", arr).put("systems", systems)
+            .put("retroarch", Games.retroArch(ctx) != null).put("busy", Games.busy).put("status", Games.status)
+            .put("storage", Games.canWriteStorage()).put("playing", Games.current ?: "")
+            .put("free", Games.root.usableSpace.takeIf { it > 0 } ?: android.os.Environment.getExternalStorageDirectory().usableSpace)
+            .toString()
     }
 
     private fun readLine(input: BufferedInputStream): String? {
@@ -88,6 +192,42 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 val name = if (uri.path == "/icon-512.png") "icon-512.png" else "icon.png"
                 send(out, 200, "image/png", ctx.assets.open(name).use { it.readBytes() })
             }
+            "/pad", "/pad.html" -> send(out, 200, "text/html; charset=utf-8", ctx.assets.open("pad.html").use { it.readBytes() })
+            "/api/games" -> ok(out, gamesJson())
+            // Game mode from the phone's 🎮 button: the game list on the projector.
+            "/api/games/open" -> {
+                var r = false
+                onMain { r = Games.openList(ctx) }
+                ok(out, json("ok" to r))
+            }
+            "/api/games/play" -> {
+                val g = Games.find(q("path"))
+                ok(out, json("ok" to (g != null && Games.launch(ctx, g))))
+            }
+            "/api/games/cmd" -> {
+                val c = q("c")
+                val r = when (c) {
+                    "quit" -> { Thread { Games.quit(ctx) }.start(); true }
+                    "MENU_TOGGLE", "SAVE_STATE", "LOAD_STATE", "RESET", "PAUSE_TOGGLE" -> Games.command(c)
+                    else -> false
+                }
+                ok(out, json("ok" to r))
+            }
+            "/api/games/delete" -> {
+                val g = Games.find(q("path"))
+                ok(out, json("ok" to (g != null && g.file.delete())))
+            }
+            "/api/games/install" -> {
+                if (!Games.busy) Thread { Games.installRetroArch(ctx) }.start()
+                ok(out, json("ok" to true))
+            }
+            "/api/games/retroarch" -> {
+                var r = false
+                onMain { r = Games.openRetroArch(ctx) }
+                ok(out, json("ok" to r))
+            }
+            // HTTP fallback for the gamepad when WebSockets are blocked.
+            "/api/pad" -> ok(out, json("ok" to Adb.pad(ctx, q("b").toIntOrNull() ?: 0)))
             "/api/state" -> ok(out, state())
             "/api/key" -> ok(out, json("ok" to (Aerials.remote(q("k")) || Control.key(ctx, q("k")))))
             // A finger on the phone's touchpad: brings the screensaver's place name back.

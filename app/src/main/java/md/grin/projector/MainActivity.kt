@@ -195,6 +195,7 @@ class MainActivity : Activity() {
             Triple(R.drawable.ic_grid, "apps", "Все приложения"),
             Triple(R.drawable.ic_hdmi, "hdmi", "HDMI"),
             Triple(R.drawable.ic_cast, "cast", "Трансляция"),
+            Triple(R.drawable.ic_gamepad, "games", "Игры"),
             Triple(R.drawable.ic_gear, "settings", "Настройки"),
         )
         items.forEachIndexed { i, (res, key, label) ->

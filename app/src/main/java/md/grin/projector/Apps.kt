@@ -208,6 +208,7 @@ object Apps {
     fun launchKey(ctx: Context, key: String): Boolean {
         if (key == "settings") return openSettings(ctx)
         if (key == "home") return goHome(ctx)
+        if (key == "games") return Games.openList(ctx)
         if (key == "apps") {
             ctx.startActivity(Intent(ctx, AllAppsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return true

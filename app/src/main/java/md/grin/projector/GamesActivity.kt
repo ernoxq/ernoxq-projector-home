@@ -25,6 +25,9 @@ import md.grin.projector.Ui.px
 class GamesActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private var games: List<Game> = emptyList()
+    private val builtins = MiniGame.all()
+    /** Built-in games first (always there, nothing to install), then the uploaded ones. */
+    private val items: List<Any> get() = builtins + games
     private lateinit var grid: GridView
     private lateinit var empty: TextView
     private lateinit var status: TextView
@@ -75,7 +78,7 @@ class GamesActivity : Activity() {
             setDrawSelectorOnTop(false)
             isSoundEffectsEnabled = false
             adapter = Adapter()
-            setOnItemClickListener { _, _, p, _ -> start(games.getOrNull(p)) }
+            setOnItemClickListener { _, _, p, _ -> open(items.getOrNull(p)) }
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 var last: View? = null
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, p: Int, id: Long) {
@@ -121,9 +124,9 @@ class GamesActivity : Activity() {
         games = list
         lastCount = list.size
         (grid.adapter as BaseAdapter).notifyDataSetChanged()
-        val none = list.isEmpty()
-        grid.visibility = if (none) View.GONE else View.VISIBLE
-        empty.visibility = if (none) View.VISIBLE else View.GONE
+        val none = false
+        grid.visibility = View.VISIBLE
+        empty.visibility = View.GONE
         empty.text = if (Games.retroArch(this) == null)
             "Для игр нужен эмулятор RetroArch (бесплатный).\nНажми «Установить RetroArch» вверху — он скачается и поставится сам."
         else
@@ -139,10 +142,7 @@ class GamesActivity : Activity() {
         val ra = Games.retroArch(this)
         val s = when {
             Games.busy -> Games.status
-            ra == null -> "Эмулятор не установлен"
-            !Games.canWriteStorage() -> "Нужен доступ к памяти: Пульт → Пункт управления → «Настроить»"
-            games.isEmpty() -> "Загружай игры с телефона"
-            else -> "${games.size} ${plural(games.size)} · ✕ — играть, ○ — назад"
+            else -> "${items.size} ${plural(items.size)} · ✕ — играть, ○ — назад"
         }
         if (status.text.toString() != s) status.text = s
         val a = if (ra == null) "Установить RetroArch" else "RetroArch"
@@ -164,6 +164,13 @@ class GamesActivity : Activity() {
         }
     }
 
+    private fun open(item: Any?) {
+        when (item) {
+            is MiniGame -> { Sounds.select(); Games.playBuiltin(this, item.key) }
+            is Game -> start(item)
+        }
+    }
+
     private fun start(g: Game?) {
         g ?: return
         Sounds.select()
@@ -177,7 +184,7 @@ class GamesActivity : Activity() {
         when (keyCode) {
             KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_START, KeyEvent.KEYCODE_Z, KeyEvent.KEYCODE_ENTER -> {
                 val f = currentFocus
-                if (f === grid) start(games.getOrNull(grid.selectedItemPosition)) else f?.performClick()
+                if (f === grid) open(items.getOrNull(grid.selectedItemPosition)) else f?.performClick()
                 return true
             }
             KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_X -> { finish(); return true }
@@ -186,11 +193,11 @@ class GamesActivity : Activity() {
     }
 
     private inner class Adapter : BaseAdapter() {
-        override fun getCount() = games.size
-        override fun getItem(p: Int) = games[p]
+        override fun getCount() = items.size
+        override fun getItem(p: Int) = items[p]
         override fun getItemId(p: Int) = p.toLong()
         override fun getView(p: Int, convert: View?, parent: ViewGroup?): View {
-            val g = games[p]
+            val item = items[p]
             val card = (convert as? ViewGroup) ?: Ui.col(this@GamesActivity).apply {
                 setPadding(px(20), px(18), px(20), px(18))
                 background = Glass.inner(28)
@@ -204,9 +211,15 @@ class GamesActivity : Activity() {
                 addView(Ui.text(this@GamesActivity, "", 20, 650, Color.WHITE).apply { maxLines = 2 }, Ui.lp(MATCH, WRAP))
             }
             val badge = card.getChildAt(0) as TextView
-            badge.text = g.system.title
-            badge.background = Ui.round(g.system.color, 14)
-            (card.getChildAt(2) as TextView).text = Games.displayTitle(g)
+            if (item is MiniGame) {
+                badge.text = "Встроенная"
+                badge.background = Ui.round(item.color, 14)
+                (card.getChildAt(2) as TextView).text = item.title
+            } else if (item is Game) {
+                badge.text = item.system.title
+                badge.background = Ui.round(item.system.color, 14)
+                (card.getChildAt(2) as TextView).text = Games.displayTitle(item)
+            }
             return card
         }
     }

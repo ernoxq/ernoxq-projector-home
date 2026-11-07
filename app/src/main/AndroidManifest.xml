@@ -84,6 +84,13 @@
             android:screenOrientation="landscape" />
 
         <activity
+            android:name=".PlayActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Saver" />
+
+        <activity
             android:name=".AerialActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:excludeFromRecents="true"

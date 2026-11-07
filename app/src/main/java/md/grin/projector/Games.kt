@@ -392,6 +392,18 @@ object Games {
 
     @Volatile var current: String? = null
         private set
+    /** Title of the built-in game on screen, if any. */
+    @Volatile var playingBuiltin: String? = null
+
+    /** Starts one of our own built-in games: no emulator, no downloads. */
+    fun playBuiltin(ctx: Context, key: String): Boolean {
+        if (MiniGame.byKey(key) == null) return false
+        return try {
+            ctx.startActivity(Intent(ctx, PlayActivity::class.java).putExtra("game", key)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))
+            true
+        } catch (_: Exception) { false }
+    }
 
     /** Starts a game straight away in RetroArch with the right core. Call from a background thread. */
     fun launch(ctx: Context, g: Game): Boolean {

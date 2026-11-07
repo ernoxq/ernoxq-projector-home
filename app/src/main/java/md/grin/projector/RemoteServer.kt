@@ -128,6 +128,12 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
      */
     @Synchronized
     private fun padInput(bits: Int, x: Int, y: Int) {
+        // Our own built-in game: the buttons go straight in, same process.
+        if (GamePad.active) {
+            GamePad.phone = bits
+            padBits = bits
+            return
+        }
         val inGame = Games.isEmulator(foreground())
         if (inGame) {
             padLive = true
@@ -186,7 +192,8 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
         for (s in Games.SYSTEMS) systems.put(JSONObject().put("key", s.key).put("title", s.title).put("exts", JSONArray(s.exts.toList())))
         return JSONObject().put("games", arr).put("systems", systems)
             .put("retroarch", Games.retroArch(ctx) != null).put("busy", Games.busy).put("status", Games.status)
-            .put("storage", Games.canWriteStorage()).put("playing", Games.current ?: "")
+            .put("storage", Games.canWriteStorage()).put("playing", Games.playingBuiltin ?: Games.current ?: "")
+            .put("builtin", JSONArray().also { a -> MiniGame.all().forEach { g -> a.put(JSONObject().put("key", g.key).put("title", g.title).put("hint", g.hint)) } })
             .put("free", Games.root.usableSpace.takeIf { it > 0 } ?: android.os.Environment.getExternalStorageDirectory().usableSpace)
             .toString()
     }
@@ -224,12 +231,17 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 ok(out, json("ok" to r))
             }
             "/api/games/play" -> {
+                if (q("game").isNotEmpty()) return ok(out, json("ok" to Games.playBuiltin(ctx, q("game"))))
                 val g = Games.find(q("path"))
                 ok(out, json("ok" to (g != null && Games.launch(ctx, g))))
             }
             "/api/games/cmd" -> {
                 val c = q("c")
-                val r = when (c) {
+                val r = when {
+                    GamePad.active && c == "quit" -> { GamePad.exitRequest = true; true }
+                    GamePad.active && c == "MENU_TOGGLE" -> { GamePad.menuRequest = true; true }
+                    else -> false
+                } || when (c) {
                     "quit" -> { Thread { Games.quit(ctx) }.start(); true }
                     "MENU_TOGGLE", "SAVE_STATE", "LOAD_STATE", "RESET", "PAUSE_TOGGLE" -> Games.command(c)
                     else -> false

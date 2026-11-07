@@ -136,9 +136,12 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
     <button class="x2 glass" onclick="closeSheet()" aria-label="Закрыть"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
 
+  <div class="lbl" style="margin-top:4px">Играть сразу</div>
+  <div id="builtin"></div>
+
   <div id="noRa" class="card glass hidden">
-    <div style="font-size:16px;font-weight:600;margin-bottom:6px">Нужен эмулятор RetroArch</div>
-    <div class="note" style="margin-top:0">Бесплатный и с открытым кодом. Скачается с сайта libretro и установится на проектор сам.</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">Для своих игр (PS1, NES, Sega…) — RetroArch</div>
+    <div class="note" style="margin-top:0">Не обязательно: встроенные игры выше работают без него. Скачивается долго (~200 МБ).</div>
     <button class="btn main" onclick="api('/api/games/install');setTimeout(load,800)">Установить RetroArch</button>
     <div class="note" id="raSt"></div>
   </div>
@@ -283,6 +286,7 @@ function load(){
     if(!r||!r.games)return;
     info=r;paintStatus();
     $('noRa').classList.toggle('hidden',!!r.retroarch);
+    $('builtin').innerHTML=(r.builtin||[]).map(g=>'<div class="game glass" data-g="'+esc(g.key)+'"><div class="t"><b>'+esc(g.title)+'</b><span>'+esc(g.hint)+'</span></div></div>').join('');
     $('raSt').textContent=r.busy?r.status:(r.status||'');
     if(r.status&&(r.busy||/Готово|Скачал|бесплат|libretro/.test(r.status)))$('freeSt').textContent=r.status;
     $('inGame').classList.toggle('hidden',!r.playing);
@@ -294,6 +298,10 @@ function load(){
     if(r.busy)setTimeout(()=>{if(sheet.classList.contains('show'))load()},1500);
   });
 }
+$('builtin').addEventListener('click',e=>{
+  const g=e.target.closest('[data-g]');
+  if(g){api('/api/games/play?game='+encodeURIComponent(g.dataset.g));info.playing=g.querySelector('b').textContent;paintStatus();closeSheet()}
+});
 $('list').addEventListener('click',e=>{
   const d=e.target.closest('[data-del]');
   if(d){e.stopPropagation();if(confirm('Удалить игру с проектора?'))api('/api/games/delete?path='+encodeURIComponent(d.dataset.del)).then(load);return}
@@ -350,7 +358,7 @@ function next(){
 function done(it){it.done=true;uploading=false;load();next()}
 
 connect();paintStatus();
-api('/api/games').then(r=>{if(r&&r.games){info=r;paintStatus();if(!r.retroarch||!r.games.length)openSheet()}});
+api('/api/games').then(r=>{if(r&&r.games){info=r;paintStatus()}});
 </script>
 </body>
 </html>

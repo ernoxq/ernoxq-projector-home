@@ -97,8 +97,10 @@ object Games {
     // ---------- RetroArch ----------
 
     /** All three RetroArch builds share the same activity names. 64-bit first: it's a little faster. */
-    private val PACKAGES = listOf("com.retroarch.aarch64", "com.retroarch", "com.retroarch.ra32")
+    val PACKAGES = listOf("com.retroarch.aarch64", "com.retroarch", "com.retroarch.ra32")
     private const val GAME_ACTIVITY = "com.retroarch.browser.retroactivity.RetroActivityFuture"
+
+    fun isEmulator(pkg: String?): Boolean = pkg != null && pkg in PACKAGES
 
     fun retroArch(ctx: Context): String? = PACKAGES.firstOrNull { Apps.installedVersion(ctx, it) >= 0 }
 
@@ -149,6 +151,79 @@ object Games {
             return false
         } finally {
             busy = false
+        }
+    }
+
+    /**
+     * The free, freely distributable games libretro hosts for RetroArch's Content Downloader (Cave Story, Doom
+     * shareware, Dinothawr…), fetched straight into Games/free and unpacked. Small files; skips anything huge.
+     */
+    fun downloadFree(ctx: Context): Boolean {
+        if (busy) return false
+        busy = true
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+        try {
+            prepare(ctx)
+            if (!canWriteStorage()) { status = "Нет доступа к памяти: нажми «Настроить» в пункте управления"; return false }
+            val base = "https://buildbot.libretro.com/assets/cores/"
+            status = "Смотрю, какие бесплатные игры есть…"
+            val dirs = text(base + ".index-dirs")?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }
+                ?: run { status = "Сервер libretro не отвечает, попробуй ещё раз"; return false }
+            var got = 0
+            for (d in dirs) {
+                val files = text(base + enc(d) + "/.index")?.lines()?.map { it.trim() }?.filter { it.endsWith(".zip", true) } ?: continue
+                for (f in files) {
+                    val dest = File(root, "free/$d")
+                    if (dest.exists() && (dest.list()?.isNotEmpty() == true)) { got++; continue }
+                    status = "Скачиваю «$d»… (${got + 1})"
+                    val zip = File(root, "free/.$f.part")
+                    zip.parentFile?.mkdirs()
+                    if (!fetchSmall(base + enc(d) + "/" + enc(f), zip, 60_000_000)) { zip.delete(); continue }
+                    try { unzip(zip, dest); got++ } catch (_: Exception) { dest.deleteRecursively() }
+                    zip.delete()
+                }
+            }
+            val playable = list().count { it.system.key == "free" }
+            status = if (playable > 0) "Готово: бесплатных игр — $playable" else "Скачал $got, но для них пока нет эмулятора в списке"
+            return playable > 0
+        } catch (e: Exception) {
+            status = "Ошибка: ${e.message}"
+            return false
+        } finally {
+            busy = false
+        }
+    }
+
+    private fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8").replace("+", "%20")
+
+    private fun text(url: String): String? = try {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.connectTimeout = 15_000; c.readTimeout = 20_000
+        if (c.responseCode == 200) c.inputStream.bufferedReader().use { it.readText() } else null
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun fetchSmall(url: String, to: File, max: Long): Boolean = try {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.connectTimeout = 15_000; c.readTimeout = 30_000
+        if (c.responseCode != 200 || c.contentLengthLong > max) false
+        else { c.inputStream.use { i -> to.outputStream().use { o -> i.copyTo(o) } }; to.length() > 0 }
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun unzip(zip: File, dest: File) {
+        dest.mkdirs()
+        val top = dest.canonicalPath + File.separator
+        java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { z ->
+            while (true) {
+                val e = z.nextEntry ?: break
+                val out = File(dest, e.name)
+                if (!out.canonicalPath.startsWith(top)) continue   // never outside the folder
+                if (e.isDirectory) out.mkdirs()
+                else { out.parentFile?.mkdirs(); out.outputStream().use { z.copyTo(it) } }
+            }
         }
     }
 

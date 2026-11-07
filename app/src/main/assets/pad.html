@@ -165,6 +165,10 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
     <b>.cue + .bin, .chd, .pbp</b> — PlayStation · <b>.nes</b> · <b>.sfc</b> · <b>.md</b> · <b>.gba</b> · <b>.gb</b>. Архивы <b>.zip</b> тоже можно, тогда спрошу, что это за приставка.<br>
     PS2 этот проектор не потянет. Загружай только игры, которые у тебя есть на законных основаниях.</div>
 
+  <div class="lbl">Бесплатные игры</div>
+  <div class="row"><button class="btn glass" onclick="api('/api/games/free');setTimeout(load,800)">Скачать бесплатные игры</button></div>
+  <div class="note" id="freeSt" style="margin-top:-4px">Cave Story, Doom (демо) и другие — их libretro раздаёт бесплатно и легально.</div>
+
   <div class="lbl" id="libLbl">На проекторе</div>
   <div id="list"></div>
 
@@ -172,7 +176,7 @@ select{font:600 15px 'Inter Tight',sans-serif;height:44px;border-radius:14px;bor
   <div class="note" style="margin-top:0">Эмуляторы ставятся внутри RetroArch: <b>Online Updater → Core Downloader</b> и выбери
     <b>Sony - PlayStation (PCSX ReARMed)</b>, <b>Nintendo - NES / Famicom (FCEUmm)</b>, <b>Nintendo - SNES / SFC (Snes9x 2010)</b>,
     <b>Sega - MS/GG/MD/CD (Genesis Plus GX)</b>, <b>Nintendo - Game Boy Advance (gpSP)</b>, <b>Nintendo - Game Boy / Color (Gambatte)</b>,
-    <b>Arcade (FinalBurn Neo)</b>.<br>Бесплатные игры там же: <b>Online Updater → Content Downloader</b> (Cave Story, Doom и другие).<br>
+    <b>Arcade (FinalBurn Neo)</b>, а для бесплатных игр — <b>Cave Story (NXEngine)</b>, <b>Doom (PrBoom)</b>, <b>Dinothawr</b>.<br>
     Меню не открывается? Нажми <b>START</b> и <b>SELECT</b> вместе.</div>
   <div class="row"><button class="btn glass" onclick="api('/api/games/retroarch');closeSheet()">Открыть RetroArch</button>
     <button class="btn glass" onclick="api('/api/games/open');closeSheet()">Список игр на проекторе</button></div>
@@ -280,6 +284,7 @@ function load(){
     info=r;paintStatus();
     $('noRa').classList.toggle('hidden',!!r.retroarch);
     $('raSt').textContent=r.busy?r.status:(r.status||'');
+    if(r.status&&(r.busy||/Готово|Скачал|бесплат|libretro/.test(r.status)))$('freeSt').textContent=r.status;
     $('inGame').classList.toggle('hidden',!r.playing);
     $('libLbl').textContent='На проекторе · '+r.games.length+' · свободно '+(r.free/1e9).toFixed(1)+' ГБ';
     $('list').innerHTML=r.games.length?r.games.map(g=>

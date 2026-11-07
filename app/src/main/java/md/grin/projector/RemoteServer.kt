@@ -106,7 +106,7 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                         val msg = String(data, Charsets.UTF_8)
                         if (msg.startsWith("p ")) {
                             val p = msg.split(' ')
-                            Adb.pad(ctx, p.getOrNull(1)?.toIntOrNull() ?: 0, p.getOrNull(2)?.toIntOrNull() ?: 0, p.getOrNull(3)?.toIntOrNull() ?: 0)
+                            padInput(p.getOrNull(1)?.toIntOrNull() ?: 0, p.getOrNull(2)?.toIntOrNull() ?: 0, p.getOrNull(3)?.toIntOrNull() ?: 0)
                         }
                         val now = android.os.SystemClock.elapsedRealtime()
                         if (now - touched > 5000) { touched = now; SleepTimer.touch() }
@@ -115,9 +115,32 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
             }
         } finally {
             // Phone locked or page closed: let go of every button so nothing stays pressed.
-            Adb.pad(ctx, 0)
+            padInput(0, 0, 0)
         }
     }
+
+    @Volatile private var padBits = 0
+    @Volatile private var padLive = false
+
+    /**
+     * Inside a game the phone is a real gamepad. Everywhere else (home screen, game list) its D-pad, ✕ and ○
+     * are plain remote keys: no virtual controller is plugged into Android until a game is on screen.
+     */
+    @Synchronized
+    private fun padInput(bits: Int, x: Int, y: Int) {
+        val inGame = Games.isEmulator(foreground())
+        if (inGame) {
+            padLive = true
+            Adb.pad(ctx, bits, x, y)
+        } else {
+            if (padLive) { padLive = false; Adb.pad(ctx, 0) }
+            val pressed = bits and padBits.inv()
+            for ((bit, k) in NAV) if (pressed and (1 shl bit) != 0) Control.key(ctx, k)
+        }
+        padBits = bits
+    }
+
+    private val NAV = listOf(13 to "up", 14 to "down", 16 to "left", 15 to "right", 0 to "ok", 11 to "ok", 1 to "back")
 
     // ---------- games uploaded from the phone: the raw file is the request body ----------
 
@@ -221,13 +244,17 @@ class RemoteServer(private val ctx: Context) : Thread("remote-server") {
                 if (!Games.busy) Thread { Games.installRetroArch(ctx) }.start()
                 ok(out, json("ok" to true))
             }
+            "/api/games/free" -> {
+                if (!Games.busy) Thread { Games.downloadFree(ctx) }.start()
+                ok(out, json("ok" to true))
+            }
             "/api/games/retroarch" -> {
                 var r = false
                 onMain { r = Games.openRetroArch(ctx) }
                 ok(out, json("ok" to r))
             }
             // HTTP fallback for the gamepad when WebSockets are blocked.
-            "/api/pad" -> ok(out, json("ok" to Adb.pad(ctx, q("b").toIntOrNull() ?: 0)))
+            "/api/pad" -> { padInput(q("b").toIntOrNull() ?: 0, 0, 0); ok(out, json("ok" to true)) }
             "/api/state" -> ok(out, state())
             "/api/key" -> ok(out, json("ok" to (Aerials.remote(q("k")) || Control.key(ctx, q("k")))))
             // A finger on the phone's touchpad: brings the screensaver's place name back.

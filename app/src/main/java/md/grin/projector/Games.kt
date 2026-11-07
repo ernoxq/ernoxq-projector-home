@@ -107,26 +107,40 @@ object Games {
     @Volatile var busy = false
         private set
 
-    /** Downloads the official RetroArch from libretro's buildbot and installs it silently. Blocking. */
+    /**
+     * Downloads the official RetroArch from libretro's buildbot and installs it silently. Blocking.
+     * The buildbot is often slow and drops connections: the download resumes where it stopped (and survives a
+     * second press of the button), and is installed straight from the file, without a second copy.
+     */
     fun installRetroArch(ctx: Context): Boolean {
         if (busy) return false
         busy = true
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
         try {
             status = "Ищу последнюю версию RetroArch…"
             val is64 = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
             val names = if (is64) listOf("RetroArch_aarch64.apk", "RetroArch.apk") else listOf("RetroArch_ra32.apk", "RetroArch.apk")
-            val versions = stableVersions().take(3)
             val dir = ctx.getExternalFilesDir(null) ?: ctx.cacheDir
             val apk = File(dir, "retroarch.apk")
-            var got = false
-            loop@ for (v in versions) for (n in names) {
-                status = "Скачиваю RetroArch $v…"
-                if (download("https://buildbot.libretro.com/stable/$v/android/$n", apk)) { got = true; break@loop }
+            val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+            // The same address as last time, so a half-downloaded file can be continued.
+            var url = prefs.getString("ra_url", null)?.takeIf { apk.exists() && apk.length() > 0 }
+            if (url == null) {
+                apk.delete()
+                loop@ for (v in stableVersions().take(3)) for (n in names) {
+                    val u = "https://buildbot.libretro.com/stable/$v/android/$n"
+                    if (exists(u)) { url = u; break@loop }
+                }
             }
-            if (!got) { status = "Не удалось скачать RetroArch (нет связи с buildbot.libretro.com)"; return false }
-            status = "Устанавливаю RetroArch…"
-            if (!Adb.install(ctx, apk)) { status = "Не удалось установить: ${Adb.lastError ?: "нет ADB"}"; return false }
+            if (url == null) { status = "Не нашёл RetroArch на buildbot.libretro.com — проверь интернет"; return false }
+            prefs.edit().putString("ra_url", url).apply()
+            if (!download(url, apk)) return false
+            status = "Устанавливаю RetroArch… (около минуты)"
+            // pm reads the file itself: no copy through ADB, which needs the free space twice.
+            val ok = Adb.shell(ctx, "pm install -r -g '${apk.absolutePath}'") || Adb.install(ctx, apk)
+            if (!ok) { status = "Не удалось установить: ${Adb.lastError ?: "нет ADB — нажми «Настроить» на пульте"}"; return false }
             apk.delete()
+            prefs.edit().remove("ra_url").apply()
             prepare(ctx)
             status = "RetroArch установлен"
             return true
@@ -136,6 +150,17 @@ object Games {
         } finally {
             busy = false
         }
+    }
+
+    private fun exists(url: String): Boolean = try {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.requestMethod = "HEAD"
+        c.connectTimeout = 15_000; c.readTimeout = 15_000
+        val ok = c.responseCode == 200
+        c.disconnect()
+        ok
+    } catch (_: Exception) {
+        false
     }
 
     private fun stableVersions(): List<String> = try {
@@ -149,32 +174,61 @@ object Games {
         emptyList()
     }.ifEmpty { listOf("1.21.0", "1.20.0", "1.19.1") }
 
-    private fun download(url: String, to: File): Boolean = try {
-        val c = URL(url).openConnection() as HttpURLConnection
-        c.connectTimeout = 15_000; c.readTimeout = 30_000
-        if (c.responseCode != 200) false else {
-            val total = c.contentLengthLong
-            c.inputStream.use { inp ->
-                to.outputStream().use { out ->
-                    val buf = ByteArray(64 * 1024)
-                    var done = 0L
-                    var shown = -1L
-                    while (true) {
-                        val n = inp.read(buf)
-                        if (n < 0) break
-                        out.write(buf, 0, n)
-                        done += n
-                        if (total > 0 && done * 100 / total != shown) {
-                            shown = done * 100 / total
-                            status = "Скачиваю RetroArch… $shown%"
+    /** Resumable download: after a stall or a dropped connection it carries on from the bytes it already has. */
+    private fun download(url: String, to: File): Boolean {
+        var total = -1L
+        var fails = 0
+        val t0 = android.os.SystemClock.elapsedRealtime()
+        val start = to.length()
+        while (fails < 30) {
+            val have = to.length()
+            if (total > 0 && have >= total) return true
+            try {
+                val c = URL(url).openConnection() as HttpURLConnection
+                c.connectTimeout = 15_000
+                c.readTimeout = 20_000          // no data for 20 s = stalled: reconnect and continue
+                if (have > 0) c.setRequestProperty("Range", "bytes=$have-")
+                val code = c.responseCode
+                val append = code == 206
+                if (code != 200 && code != 206) { c.disconnect(); fails++; Thread.sleep(3000); continue }
+                total = if (append) have + c.contentLengthLong else c.contentLengthLong
+                val free = to.parentFile?.usableSpace ?: 0
+                if (total > 0 && free in 1 until (total - have) + 300_000_000) {
+                    status = "Мало места на проекторе: нужно ~${(total + 300_000_000) / 1_000_000} МБ, свободно ${free / 1_000_000} МБ"
+                    c.disconnect()
+                    return false
+                }
+                java.io.FileOutputStream(to, append).use { out ->
+                    c.inputStream.use { inp ->
+                        val buf = ByteArray(64 * 1024)
+                        var done = if (append) have else 0L
+                        var shownAt = 0L
+                        while (true) {
+                            val n = inp.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            done += n
+                            val now = android.os.SystemClock.elapsedRealtime()
+                            if (now - shownAt > 700) {
+                                shownAt = now
+                                val secs = ((now - t0) / 1000.0).coerceAtLeast(1.0)
+                                val speed = (done - start) / secs / 1_000_000
+                                status = if (total > 0) "Скачиваю RetroArch… ${done * 100 / total}% · ${done / 1_000_000} из ${total / 1_000_000} МБ · %.1f МБ/с".format(speed)
+                                         else "Скачиваю RetroArch… ${done / 1_000_000} МБ"
+                            }
                         }
                     }
                 }
+                c.disconnect()
+                if (total <= 0 || to.length() >= total) return to.length() > 1_000_000
+            } catch (e: Exception) {
+                fails++
+                status = "Связь с сервером прервалась, продолжаю… (${to.length() / 1_000_000} МБ уже есть)"
+                Thread.sleep(3000)
             }
-            to.length() > 1_000_000
         }
-    } catch (_: Exception) {
-        false
+        status = "Сервер libretro не отвечает. Нажми «Установить» ещё раз — продолжу с ${to.length() / 1_000_000} МБ"
+        return false
     }
 
     /**

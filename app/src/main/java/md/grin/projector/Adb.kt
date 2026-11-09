@@ -257,6 +257,12 @@ object Adb {
         section("Кто держит звук", "dumpsys audio | grep -A6 'Audio Focus stack'")
         section("Журнал: остановки и нехватка памяти",
             "logcat -d -v time -t 4000 | grep -iE 'lowmemorykiller|lmkd|Killing [0-9]|has died|ANR in|audio.?focus|spotify' | tail -45")
+        val prefs = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+        section("Заставка", "settings get secure screensaver_components; settings get secure screensaver_enabled; " +
+            "settings get secure screensaver_activate_on_sleep; settings get system screen_off_timeout; " +
+            "dumpsys dreams | grep -iE 'component|dreaming' | head -8")
+        append("Заставку сбрасывали: ").append(prefs.getString("saver_reset", "нет")).append("\n")
+        append("Чужая заставка на экране: ").append(prefs.getString("saver_foreign", "нет")).append("\n\n")
         section("Включённые приложения прошивки", "pm list packages -s -e | sed 's/package://' | sort")
     }
 
@@ -276,6 +282,58 @@ object Adb {
         shell(ctx, "settings put secure screensaver_components $id")
         shell(ctx, "settings put secure screensaver_default_component $id")
         shell(ctx, "settings put secure screensaver_activate_on_sleep 1")
+        disableOtherDreams(ctx)
+    }
+
+    /**
+     * Every other screensaver on the projector (the firmware's photo slideshow, Android's Photo Table and Colors…)
+     * is switched off one by one — only the screensaver part, never the whole app. With nothing else left,
+     * Android can't fall back to the photos when it forgets our choice.
+     * `pm enable <package>/<class>` brings any of them back.
+     */
+    private fun disableOtherDreams(ctx: Context) {
+        val found = try {
+            ctx.packageManager.queryIntentServices(android.content.Intent("android.service.dreams.DreamService"), 0)
+        } catch (_: Exception) { emptyList() }
+        for (ri in found) {
+            val si = ri.serviceInfo ?: continue
+            if (si.packageName == ctx.packageName) continue
+            shell(ctx, "pm disable --user 0 ${si.packageName}/${si.name}") ||
+                shell(ctx, "pm disable-user --user 0 ${si.packageName}/${si.name}")
+        }
+    }
+
+    /**
+     * The firmware (and Android after an update of this app) puts its photo screensaver back now and then.
+     * A cheap check: if the system screensaver is not ours any more, it is set again.
+     */
+    fun guardScreensaver(ctx: Context) {
+        val pkg = ctx.packageName
+        val out = run(ctx, "settings get secure screensaver_components; settings get secure screensaver_enabled") ?: return
+        val lines = out.trim().lines().map { it.trim() }
+        val comp = lines.getOrNull(0).orEmpty()
+        val on = lines.getOrNull(1).orEmpty()
+        val ours = comp == "$pkg/.AerialDream" || comp == "$pkg/$pkg.AerialDream"
+        if (!ours || on != "1") {
+            Log.w(TAG, "screensaver was '$comp' (enabled=$on): ours again")
+            ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit()
+                .putString("saver_reset", "$comp @ ${java.util.Date()}").apply()
+            useOurScreensaver(ctx)
+        }
+    }
+
+    /** A firmware photo screensaver opened as an ordinary app (not through Android's screensaver setting). */
+    private val FOREIGN_SAVER = Regex("screensaver|screen_saver|dream|phototable|photoframe|slideshow|daydream", RegexOption.IGNORE_CASE)
+    fun isForeignSaver(ctx: Context, pkg: String?): Boolean =
+        pkg != null && pkg != ctx.packageName && FOREIGN_SAVER.containsMatchIn(pkg)
+
+    /** Closes the firmware's photo screensaver and switches it off for good. */
+    fun killForeignSaver(ctx: Context, pkg: String) {
+        Log.w(TAG, "foreign screensaver on screen: $pkg")
+        ctx.getSharedPreferences("home", Context.MODE_PRIVATE).edit()
+            .putString("saver_foreign", "$pkg @ ${java.util.Date()}").apply()
+        shell(ctx, "am force-stop $pkg")
+        shell(ctx, "pm disable-user --user 0 $pkg")
     }
 
     /** Silent install (used for updates). The app restarts itself afterwards. */

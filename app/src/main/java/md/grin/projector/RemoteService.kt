@@ -99,13 +99,32 @@ class RemoteService : Service() {
         }
     }
 
+    private var saverCheckedAt = 0L
+
     /** Home screen left alone for 15 minutes: the screensaver comes on by itself. */
     private val aerialWatch = object : Runnable {
         override fun run() {
             val ctx = applicationContext
             // 15 minutes without a remote: the screensaver (with music: the music screen, no video).
             if (App.isForeground && !Aerials.showing && Aerials.isOn(ctx) && SleepTimer.idleMs() >= Aerials.IDLE_MS) Aerials.show(ctx)
-            Thread { Adb.closeIdleKeys() }.start()
+            val now = android.os.SystemClock.elapsedRealtime()
+            val checkSetting = now - saverCheckedAt > 5 * 60_000L
+            if (checkSetting) saverCheckedAt = now
+            Thread {
+                Adb.closeIdleKeys()
+                try {
+                    // Our flights must be the only screensaver: put back if the firmware swapped in its photos.
+                    if (checkSetting && Aerials.isOn(ctx)) Adb.guardScreensaver(ctx)
+                    // The firmware's photo slideshow opened as an app: closed, and our flights instead.
+                    if (!App.isForeground && !Aerials.showing && Aerials.isOn(ctx)) {
+                        val fg = Apps.foreground(ctx)
+                        if (fg != null && Adb.isForeignSaver(ctx, fg)) {
+                            Adb.killForeignSaver(ctx, fg)
+                            updates.post { Aerials.show(ctx) }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }.start()
             updates.postDelayed(this, 15_000)
         }
     }

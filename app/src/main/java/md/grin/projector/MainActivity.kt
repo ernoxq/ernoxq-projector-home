@@ -397,7 +397,7 @@ class MainActivity : Activity() {
         date.text = dateFmt.format(now).replaceFirstChar { it.uppercase() }
         val h = Calendar.getInstance(Clock.zone).apply { time = now }.get(Calendar.HOUR_OF_DAY)
         val hello = when (h) { in 5..11 -> "Доброе утро"; in 12..17 -> "Добрый день"; in 18..22 -> "Добрый вечер"; else -> "Доброй ночи" }
-        val name = getSharedPreferences("home", MODE_PRIVATE).getString("name", "Эрнест")
+        val name = getSharedPreferences("home", MODE_PRIVATE).getString("name", "Эрнест и София")
         val text = "$hello, $name"
         if (greet.text.toString() != text) greet.text = text
     }
